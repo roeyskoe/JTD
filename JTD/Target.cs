@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Jypeli;
+﻿using Jypeli;
 using Jypeli.Widgets;
+
 /// <summary>
 /// Suojeltavan kohteen luokka, siltä varalta jos joskus haluaisi useampia.
 /// </summary>
@@ -24,7 +21,7 @@ class Target : PhysicsObject
         ElamaPalkki.BarColor = Color.DarkGreen;
         ElamaPalkki.Color = Color.BloodRed;
         ElamaPalkki.Bottom = Bottom - 5;
-        this.Add (ElamaPalkki);
+        Add (ElamaPalkki);
     }
 }
 

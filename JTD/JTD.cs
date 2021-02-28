@@ -1,13 +1,7 @@
-using System;
 using System.Collections.Generic;
 using Jypeli;
 using Jypeli.Assets;
-using Jypeli.Controls;
-using Jypeli.Effects;
 using Jypeli.Widgets;
-
-/// @author Mikko Röyskö
-/// @version 1.2
 
 public class JTD : PhysicsGame
 {
@@ -64,15 +58,10 @@ public class JTD : PhysicsGame
 		TappoLaskuri ();
 
 		Aalto ();
-		/*
-        Timer Ajastin = new Timer();
-        Ajastin.Interval = 10;
-        Ajastin.Timeout += Aalto;
-        Ajastin.Start(500); //Luodaan monta vihollisaaltoa
-        */
+
 		Camera.ZoomToAllObjects ();
 
-		pistelista = DataStorage.TryLoad<ScoreList> (pistelista, "pisteet.xml");
+		pistelista = DataStorage.TryLoad (pistelista, "pisteet.xml");
 		lisatty = false;
 
 	}
@@ -290,7 +279,7 @@ public class JTD : PhysicsGame
 			pisteIkkuna = new HighScoreWindow ("Parhaat pisteet", pistelista);
 		}
 
-		pisteIkkuna.Closed += delegate { DataStorage.Save<ScoreList> (pistelista, "pisteet.xml"); Loppu (); lisatty = true; };
+		pisteIkkuna.Closed += delegate { DataStorage.Save (pistelista, "pisteet.xml"); Loppu (); lisatty = true; };
 		Add (pisteIkkuna);
 	}
 
@@ -313,7 +302,7 @@ public class JTD : PhysicsGame
             tykki = Mouse.IsCursorOn(t);
 			if (tykki) {
 				jotainKlikattu = true;
-				PaivitaTykki (t);
+				raha.Value = t.PaivitaTykki(raha.Value);
 
 			}
 		}
@@ -355,7 +344,7 @@ public class JTD : PhysicsGame
 			if (tykit [valittuTykki, 4] == null) {
 				torni.AmpumisAjastin = new Timer ();
 				torni.AmpumisAjastin.Interval = (double)tykit [valittuTykki, 2];
-				torni.AmpumisAjastin.Timeout += delegate { Ammu (torni); };
+				torni.AmpumisAjastin.Timeout += delegate { torni.Ammu(); };
 				torni.AmpumisAjastin.Start ();
 			} else {
 				torni.Burst = new Timer ();
@@ -371,7 +360,7 @@ public class JTD : PhysicsGame
 			//Luodaan ajastin joka kääntää tornin osoittamaan kohti kohdettaan.
 			torni.KaantymisAjastin = new Timer ();
 			torni.KaantymisAjastin.Interval = 0.1;
-			torni.KaantymisAjastin.Timeout += delegate { KaannaTykki (torni); };
+			torni.KaantymisAjastin.Timeout += delegate { torni.KaannaTykki(); };
 			torni.KaantymisAjastin.Start ();
 		}
 	}
@@ -380,43 +369,8 @@ public class JTD : PhysicsGame
 	{
 		torni.AmpumisAjastin = new Timer ();
 		torni.AmpumisAjastin.Interval = nopeus;
-		torni.AmpumisAjastin.Timeout += delegate { Ammu (torni); };
+		torni.AmpumisAjastin.Timeout += delegate { torni.Ammu(); };
 		torni.AmpumisAjastin.Start (3);
-	}
-
-	/// <summary>
-	/// Päivittää tornin ominaisuuksia paremmiksi.
-	/// </summary>
-	/// <param name="Torni"></param>
-	public void PaivitaTykki (Cannon torni)
-	{
-		Color [] varit = new Color [] { Color.Red, Color.Green, Color.Blue, Color.White };
-		if (raha.Value >= torni.Hinta * 2 && torni.Versio < 4) {
-			torni.Versio++;
-			torni.AmpumisAjastin.Interval = torni.AmpumisAjastin.Interval * 0.9;
-			torni.Vahinko = Convert.ToInt32 (torni.Vahinko * 1.5);
-			Image kuva = torni.Image.Clone ();
-			for (int i = 2; i < 4; i++) {
-				for (int j = 13; j < 20; j++)
-					kuva [j, kuva.Height - i] = varit [torni.Versio - 1]; // Muutetaan kuvan pikseleitä.
-			}
-			torni.Image = kuva;
-			torni.Hinta = torni.Hinta * 2;
-			raha.Value -= Convert.ToInt32 (torni.Hinta);
-		}
-	}
-	/// <summary>
-	/// Kääntää tornin vihollista kohti.
-	/// Muutos on ainoastaan kosmeettinen eikä vaikuta mitenkään sen toimintaan.
-	/// </summary>
-	/// <param name="Torni">Torni.</param>
-	public void KaannaTykki (Cannon torni)
-	{
-		PhysicsObject kohde = EtsiVihollinen (torni);
-		if (kohde != null) {
-			Vector Suunta = (kohde.Position - torni.Position).Normalize ();
-			torni.Angle = Suunta.Angle;
-		}
 	}
 
 	/// <summary>
@@ -486,38 +440,6 @@ public class JTD : PhysicsGame
 			}
 		}
 		return kohde;
-	}
-
-	/// <summary>
-	/// Aliohjelma joka vastaa tykkien ampumisesta
-	/// </summary>
-	/// <param name="Torni">Torni.</param>
-	public void Ammu (Cannon torni)
-	{
-		PhysicsObject kohde = EtsiVihollinen (torni);
-
-		if (kohde != null) // Tarkistetaan löytyikö vihollista
-		{
-			PhysicsObject ammus = new PhysicsObject (5, 5, Shape.Circle);
-			ammus.Position = torni.Position;
-			ammus.Color = torni.AmmuksenVari;
-			ammus.LifetimeLeft = TimeSpan.FromSeconds (2);
-
-			Add (ammus);
-
-			//Luodaan pieni "korjauskerroin" jotta tykit osaavat tähdätä ennakkoon, mutta
-			//kerrotaan se pienellä satunnaisuudella jotta tykit eivät olisi aivan liian tarkkoja.
-			Vector nopeus = kohde.Velocity;
-			Vector etaisyys = kohde.Position - torni.Position;
-			Vector tahtayskorjain = etaisyys * 0.1 + nopeus * RandomGen.NextDouble (0.05, 2);
-
-			//Ammukset saattavat mennä suurilla nopueksilla vihollisesta läpi jos siltä tuntuu
-			double ammuksenNopeus = 500;
-			Vector Suunta = (kohde.Position - torni.Position).Normalize ();
-			ammus.Hit (ammus.Mass * Suunta * ammuksenNopeus + tahtayskorjain);
-
-			AddCollisionHandler (ammus, "Vihollinen", torni.OsuuViholliseen);
-		}
 	}
 }
 

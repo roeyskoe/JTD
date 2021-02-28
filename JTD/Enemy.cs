@@ -1,8 +1,4 @@
-﻿using System;
-using Jypeli;
-using Jypeli.Assets;
-using Jypeli.Controls;
-using Jypeli.Effects;
+﻿using Jypeli;
 using Jypeli.Widgets;
 
 /// <summary>
@@ -30,7 +26,7 @@ public class Enemy : PhysicsObject
 		ElamaPalkki.BarColor = Color.DarkGreen;
 		ElamaPalkki.Color = Color.BloodRed;
 		ElamaPalkki.Bottom = Bottom - 5;
-		this.Add (ElamaPalkki);
+		Add (ElamaPalkki);
 	}
 }
 
