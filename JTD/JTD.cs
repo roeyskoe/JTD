@@ -91,7 +91,7 @@ public class JTD : PhysicsGame
 		Keyboard.Listen (Key.D3, ButtonState.Pressed, ValitseTykki, "Valitse 3. tykki", 3);
 		Keyboard.Listen (Key.D4, ButtonState.Pressed, ValitseTykki, "Valitse 4. tykki", 4);
 #if DEBUG
-		Keyboard.Listen (Key.Enter, ButtonState.Pressed, delegate { raha.Value += 10000; }, "Valitse 4. tykki", 4);
+		Keyboard.Listen (Key.Enter, ButtonState.Pressed, delegate { raha.Value += 10000; }, "Debugmoney", 4);
 #endif
 	}
 
@@ -100,7 +100,7 @@ public class JTD : PhysicsGame
 	/// </summary>
 	public void LuoRahaLaskuri ()
 	{
-		raha = new IntMeter (100000);
+		raha = new IntMeter (1000);
 
 		Label rahaLaskuri = new Label ();
 		rahaLaskuri.X = Screen.Left + 70;
@@ -310,15 +310,7 @@ public class JTD : PhysicsGame
 
 		//Verrataan hiiren sijaintia listojen objekteihin.
 		foreach (Cannon t in tykit) {
-#if LINUX
-			if (Vector.Distance(t.Position, (Mouse.PositionOnWorld + new Vector(0,20))) < 30)
-				{
-				tykki = true;
-				}
-#endif
-#if WINDOWS
             tykki = Mouse.IsCursorOn(t);
-#endif
 			if (tykki) {
 				jotainKlikattu = true;
 				PaivitaTykki (t);
@@ -327,17 +319,9 @@ public class JTD : PhysicsGame
 		}
 		int sijainti = 0;
 		foreach (GameObject n in nappulat) {
-#if LINUX
-			if (Vector.Distance(n.Position, (Mouse.PositionOnWorld + new Vector(0,20))) < 6)
-			{
-				nappula = true;
-				sijainti = nappulat.FindIndex(x => x.Equals(n)) + 1; //Looppi toimii jotenkin hassusti linuksilla niin ei voi käyttää tuota "sijainti++"
-			}
-#endif
-#if WINDOWS
             nappula = Mouse.IsCursorOn(n);
 			sijainti++;
-#endif
+
 			if (nappula) {
 				jotainKlikattu = true;
 				ValitseTykki (sijainti);
@@ -345,13 +329,7 @@ public class JTD : PhysicsGame
 		}
 
 		foreach (GameObject p in reitti) {
-#if LINUX
-			if (Vector.Distance(p.Position, (Mouse.PositionOnWorld + new Vector(0,20))) < 35)
-				polku = true;
-#endif
-#if WINDOWS
             polku = Mouse.IsCursorOn(p);
-#endif
 			if (polku) {
 				jotainKlikattu = true;
 			}
@@ -371,14 +349,9 @@ public class JTD : PhysicsGame
 			Cannon torni = new Cannon ((int)tykit [valittuTykki, 0], (int)tykit [valittuTykki, 1], (double)tykit [valittuTykki, 2], (Image)tykit [valittuTykki, 3]);
 			torni.Versio = 0;
 			torni.AmmuksenVari = (Color)tykit [valittuTykki, 5];
-			//Jypelin bugin vuoksi tämä summa vaaditaan linuksilla.
-#if LINUX
-            torni.Position = Mouse.PositionOnWorld + new Vector(0, 22);
-#endif
 
-#if WINDOWS
             torni.Position = Mouse.PositionOnWorld;
-#endif
+
 			if (tykit [valittuTykki, 4] == null) {
 				torni.AmpumisAjastin = new Timer ();
 				torni.AmpumisAjastin.Interval = (double)tykit [valittuTykki, 2];
@@ -541,7 +514,7 @@ public class JTD : PhysicsGame
 			//Ammukset saattavat mennä suurilla nopueksilla vihollisesta läpi jos siltä tuntuu
 			double ammuksenNopeus = 500;
 			Vector Suunta = (kohde.Position - torni.Position).Normalize ();
-			ammus.Hit (Suunta * ammuksenNopeus + tahtayskorjain);
+			ammus.Hit (ammus.Mass * Suunta * ammuksenNopeus + tahtayskorjain);
 
 			AddCollisionHandler (ammus, "Vihollinen", torni.OsuuViholliseen);
 		}
