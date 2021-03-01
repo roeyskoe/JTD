@@ -12,42 +12,38 @@
         <PackageReference Include="Jypeli.NET" Version="10.*" />
         <PackageReference Include="Jypeli.FarseerPhysics.NET" Version="1.0.*" />
     </ItemGroup>
-
     <ItemGroup>
-      <Folder Include="Content\" />
-    </ItemGroup>
-    <ItemGroup>
-      <None Update="Content\Nurmikko.png">
+      <None Update="Content\grass.png">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Content\Kenttä.txt">
+      <None Update="Content\level.txt">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Content\Vihu4.png">
+      <None Update="Content\enemy4.png">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Content\Vihu3.png">
+      <None Update="Content\enemy3.png">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Content\Vihu2.png">
+      <None Update="Content\enemy2.png">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Content\Vihu1.png">
+      <None Update="Content\enemy1.png">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Content\Tykki4.png">
+      <None Update="Content\cannon4.png">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Content\Tykki3.png">
+      <None Update="Content\cannon3.png">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Content\Tykki2.png">
+      <None Update="Content\cannon2.png">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Content\Tykki1.png">
+      <None Update="Content\cannon1.png">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Content\Linna.png">
+      <None Update="Content\castle.png">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
     </ItemGroup>

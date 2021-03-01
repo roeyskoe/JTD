@@ -5,32 +5,32 @@ using Jypeli.Widgets;
 
 public class JTD : PhysicsGame
 {
-    private Image nurmikko = LoadImage("Nurmikko");
+    private Image grass = LoadImage("grass.png");
 
-    private Image tykki1 = LoadImage("Tykki1"),
-        tykki2 = LoadImage("Tykki2"),
-        tykki3 = LoadImage("Tykki3"),
-        tykki4 = LoadImage("Tykki4");
+    private Image cannon1 = LoadImage("cannon1"),
+        cannon2 = LoadImage("cannon2.png"),
+        cannon3 = LoadImage("cannon3.png"),
+        cannon4 = LoadImage("cannon4.png");
 
-    private Image vihu1 = LoadImage("Vihu1"),
-        vihu2 = LoadImage("Vihu2"),
-        vihu3 = LoadImage("Vihu3"),
-        vihu4 = LoadImage("Vihu4");
+    private Image enemy1 = LoadImage("enemy1.png"),
+        enemy2 = LoadImage("enemy2.png"),
+        enemy3 = LoadImage("enemy3.png"),
+        enemy4 = LoadImage("enemy4.png");
 
-    private Image jyfl = LoadImage("Linna");
-    private ScoreList pistelista;
-    private IntMeter tapettujaVihollisia;
-    private SortedList<char, Vector> reitti;
-    private object[,] tykit;
-    private object[,] viholliset;
-    private int taso;
-    private int vihollisia;
-    private bool lisatty;
-    private IntMeter raha;
-    private Target kohde;
+    private Image castle = LoadImage("castle.png");
+    private ScoreList pointlist;
+    private IntMeter enemyKillCount;
+    private SortedList<char, Vector> route;
+    private object[,] cannons;
+    private object[,] enemies;
+    private int level;
+    private int enemiesAlive;
+    private bool pointsAdded;
+    private IntMeter money;
+    private Target target;
 
     /// <summary>
-    /// Kutsuu kaikkia pelin eri toimintoja.
+    /// Game initialization
     /// </summary>
     public override void Begin()
     {
@@ -38,434 +38,431 @@ public class JTD : PhysicsGame
 
         IsPaused = false;
 
-        taso = 1;
-        vihollisia = 0;
-        valittuTykki = 1;
+        level = 1;
+        enemiesAlive = 0;
+        cannonSelected = 1;
 
-        pistelista = new ScoreList(10, false, 0);
+        pointlist = new ScoreList(10, false, 0);
 
-        viholliset = new object[,]
+        enemies = new object[,]
         {
-            {3, 100, 30, vihu1},
-            {5, 40, 40, vihu2},
-            {7, 60, 50, vihu3},
-            {9, 20, 70, vihu4}
-        }; //Elämää, nopeus, arvo, tekstuuri
+            {3, 100, 30, enemy1},
+            {5, 40, 40, enemy2},
+            {7, 60, 50, enemy3},
+            {9, 20, 70, enemy4}
+        }; //lifepoints, speed, value, texture
 
-        tykit = new object[,]
+        cannons = new object[,]
         {
-            {300, 1, 1.0, tykki1, null, Color.Black},
-            {500, 3, 0.1, tykki2, 2, Color.Red},
-            {900, 5, 0.3, tykki3, null, Color.LimeGreen},
-            {1000, 8, 0.6, tykki4, null, Color.Blue}
-        }; //Hinta, vahinko, nopeus, tekstuuri, burstin nopeus, ammuksen väri
+            {300, 1, 1.0, cannon1, null, Color.Black},
+            {500, 3, 0.1, cannon2, 2, Color.Red},
+            {900, 5, 0.3, cannon3, null, Color.LimeGreen},
+            {1000, 8, 0.6, cannon4, null, Color.Blue}
+        }; //Price, damage, speed, texture, burst speed, ammo color
 
         SetWindowSize(1000, 600);
 
-        Level.Background.Image = nurmikko;
-        LuoKentta();
-        Ohjaimet();
-        LuoRahaLaskuri();
-        NaytaTykit();
-        ValitseTykki(valittuTykki);
-        TappoLaskuri();
+        Level.Background.Image = grass;
+        CreateLevel();
+        Controllers();
+        CreateMoneyCounter();
+        ShowCannons();
+        SelectCannon(cannonSelected);
+        KillCounter();
 
-        Aalto();
+        Wave();
 
         Camera.ZoomToAllObjects();
 
-        pistelista = DataStorage.TryLoad(pistelista, "pisteet.xml");
-        lisatty = false;
+        pointlist = DataStorage.TryLoad(pointlist, "points.xml");
+        pointsAdded = false;
     }
 
     /// <summary>
-    /// Aliohjelma joka määrittelee kaikki ohjaimet.
+    /// Set controllers
     /// </summary>
-    public void Ohjaimet()
+    public void Controllers()
     {
         IsMouseVisible = true;
 
-        Keyboard.Listen(Key.Escape, ButtonState.Pressed, ConfirmExit, "Lopeta peli");
-        Mouse.Listen(MouseButton.Left, ButtonState.Pressed, Hiiri, "Rakenna torni");
-        Keyboard.Listen(Key.D1, ButtonState.Pressed, ValitseTykki, "Valitse 1. tykki", 1);
-        Keyboard.Listen(Key.D2, ButtonState.Pressed, ValitseTykki, "Valitse 2. tykki", 2);
-        Keyboard.Listen(Key.D3, ButtonState.Pressed, ValitseTykki, "Valitse 3. tykki", 3);
-        Keyboard.Listen(Key.D4, ButtonState.Pressed, ValitseTykki, "Valitse 4. tykki", 4);
+        Keyboard.Listen(Key.Escape, ButtonState.Pressed, ConfirmExit, "Quit");
+        Mouse.Listen(MouseButton.Left, ButtonState.Pressed, MouseHandler, "Build cannon");
+        Keyboard.Listen(Key.D1, ButtonState.Pressed, SelectCannon, "Select 1st cannon", 1);
+        Keyboard.Listen(Key.D2, ButtonState.Pressed, SelectCannon, "Select 2nd cannon", 2);
+        Keyboard.Listen(Key.D3, ButtonState.Pressed, SelectCannon, "Select 3rd cannon", 3);
+        Keyboard.Listen(Key.D4, ButtonState.Pressed, SelectCannon, "Select 4th cannon", 4);
 #if DEBUG
-        Keyboard.Listen(Key.Enter, ButtonState.Pressed, delegate { raha.Value += 10000; }, "Debugmoney", 4);
+        Keyboard.Listen(Key.Enter, ButtonState.Pressed, delegate { money.Value += 10000; }, "Debugmoney", 4);
 #endif
     }
 
     /// <summary>
-    /// Rahalaskuri.
+    /// Moneycounter.
     /// </summary>
-    public void LuoRahaLaskuri()
+    public void CreateMoneyCounter()
     {
-        raha = new IntMeter(1000);
+        money = new IntMeter(1000);
 
         Label rahaLaskuri = new Label();
         rahaLaskuri.X = Screen.Left + 70;
         rahaLaskuri.Y = Screen.Top - 20;
         rahaLaskuri.TextColor = Color.Black;
         rahaLaskuri.Color = Color.White;
-        rahaLaskuri.IntFormatString = "Rahaa: {0:D3}";
+        rahaLaskuri.IntFormatString = "Money: {0:D3}";
 
-        rahaLaskuri.BindTo(raha);
+        rahaLaskuri.BindTo(money);
         Add(rahaLaskuri);
     }
 
     /// <summary>
-    /// Näyttää kuinka monta vihollista on tapettu
+    /// Killcounter
     /// </summary>
-    public void TappoLaskuri()
+    public void KillCounter()
     {
-        tapettujaVihollisia = new IntMeter(0);
+        enemyKillCount = new IntMeter(0);
 
         Label tappoLaskuri = new Label();
         tappoLaskuri.X = Level.Right + 30;
         tappoLaskuri.Y = Level.Top + 70;
         tappoLaskuri.TextColor = Color.Black;
         tappoLaskuri.Color = Color.White;
-        tappoLaskuri.IntFormatString = "Tappoja: {0}";
+        tappoLaskuri.IntFormatString = "Kills: {0}";
 
-        tappoLaskuri.BindTo(tapettujaVihollisia);
+        tappoLaskuri.BindTo(enemyKillCount);
         Add(tappoLaskuri);
     }
 
     /// <summary>
-    /// Luo vihollisaallon.
+    /// Create a new enemy wave.
     /// </summary>
-    public void Aalto()
+    public void Wave()
     {
         Timer ajastin = new Timer();
         ajastin.Interval = 0.5;
-        ajastin.Timeout += LuoVihollinen;
-        ajastin.Start(taso + 2); //Luodaan 5 vihollista
+        ajastin.Timeout += CreateEnemy;
+        ajastin.Start(level + 2);
     }
 
     /// <summary>
-    /// Luodaan vihollinen, ja sille aivot
+    /// Create a new random enemy with properties based on current level
     /// </summary> 
-    public void LuoVihollinen()
+    public void CreateEnemy()
     {
-        //Arvotaan nyt satunnaiset viholliset, tulevaisuudessa voisi olla vaikka aaltokohtaisesti
-        //määritetty mitä tulee (ja millä ominaisuuksilla?).
         int i = RandomGen.NextInt(0, 4);
-        Enemy vihu = new Enemy(15, 15, (int) viholliset[i, 0] * taso, (int) viholliset[i, 2], (Image) viholliset[i, 3],
-            (int) viholliset[i, 1], reitti);
-        vihu.Position = reitti.Values[0];
+        Enemy enemy = new Enemy(15, 15, (int) enemies[i, 0] * level, (int) enemies[i, 2], (Image) enemies[i, 3],
+            (int) enemies[i, 1], route);
+        enemy.Position = route.Values[0];
 
-        Add(vihu);
-        AddCollisionHandler(vihu, "JYFL", delegate
+        Add(enemy);
+        AddCollisionHandler(enemy, "Target", delegate
         {
-            Explosion rajahdys = new Explosion(50);
-            rajahdys.Position = vihu.Position;
-            //Add(rajahdys); //TODO: nullpointer crash
-            kohde.Elamalaskuri.Value -= 100;
-            vihu.Destroy();
+            Explosion explosion = new Explosion(50);
+            explosion.Position = enemy.Position;
+            //Add(explosion); //TODO: nullpointer crash
+            target.Health.Value -= 100;
+            enemy.Destroy();
         });
-        vihu.Destroyed += delegate { Tappo(vihu); };
+        enemy.Destroyed += delegate { Kill(enemy); };
 
-        vihollisia++;
+        enemiesAlive++;
     }
 
     /// <summary>
-    /// Antaa rahaa tapetun vihollisen arvon verran.
+    /// After enemy dies, get money based on its value
     /// </summary>
     /// <param name="Vihu"></param>
-    public void Tappo(Enemy vihu)
+    public void Kill(Enemy enemy)
     {
-        raha.Value += vihu.Arvo;
-        tapettujaVihollisia.Value++;
+        money.Value += enemy.Value;
+        enemyKillCount.Value++;
 
-        vihollisia--;
+        enemiesAlive--;
 
-        if (vihollisia == 0)
+        if (enemiesAlive == 0)
         {
-            Aalto();
-            taso++;
+            Wave();
+            level++;
         }
     }
 
     /// <summary>
-    /// Luodaan kenttä.
+    /// Create the level
     /// </summary>
-    public void LuoKentta()
+    public void CreateLevel()
     {
-        reitti = new SortedList<char, Vector>();
+        route = new SortedList<char, Vector>();
 
-        TileMap ruudut = TileMap.FromLevelAsset("Kenttä");
-        ruudut.SetTileMethod('#', LuoPolku);
-        ruudut.SetTileMethod('+', Rakennuskieltoalue);
+        TileMap tiles = TileMap.FromLevelAsset("level.txt");
+        tiles.SetTileMethod('#', CreatePath);
+        tiles.SetTileMethod('+', CreateNoBuildArea);
         for (char merkki = 'A'; merkki <= 'Z'; merkki++)
         {
-            ruudut.SetTileMethod(merkki, LuoKulma, merkki);
+            tiles.SetTileMethod(merkki, CreateCorner, merkki);
         }
 
-        ruudut.Execute(20, 20);
-        LuoKohde();
+        tiles.Execute(20, 20);
+        CreateTarget();
     }
 
     /// <summary>
-    /// Alue jolle ei voi rakentaa tykkejä, mutta ei näy pelikentällä.
+    /// Create an area where you cannot build
     /// </summary>
-    /// <param name="paikka"></param>
-    /// <param name="leveys"></param>
-    /// <param name="korkeus"></param>
-    public void Rakennuskieltoalue(Vector paikka, double leveys, double korkeus)
+    /// <param name="position"></param>
+    /// <param name="width"></param>
+    /// <param name="height"></param>
+    public void CreateNoBuildArea(Vector position, double width, double height)
     {
-        GameObject polku = new GameObject(leveys, korkeus);
-        polku.Position = paikka;
-        polku.Tag = "Polku";
-        polku.Color = Color.Transparent;
+        GameObject noBuild = new GameObject(width, height);
+        noBuild.Position = position;
+        noBuild.Tag = "NoBuild";
+        noBuild.Color = Color.Transparent;
+        Add(noBuild, -1);
+    }
+
+    /// <summary>
+    /// Create a path in which enemies travel.
+    /// </summary>
+    /// <param name="position"></param>
+    /// <param name="width"></param>
+    /// <param name="height"></param>
+    public void CreatePath(Vector position, double width, double height)
+    {
+        GameObject polku = new GameObject(width, height);
+        polku.Position = position;
+        polku.Tag = "Path";
         Add(polku, -1);
     }
 
     /// <summary>
-    /// Luodaan polku jota pitkin oliot kulkevat.
+    /// Create a cornerpiece where enemies direction changes.
     /// </summary>
-    /// <param name="paikka">Paikka.</param>
-    /// <param name="leveys">Leveys.</param>
-    /// <param name="korkeus">Korkeus.</param>
-    public void LuoPolku(Vector paikka, double leveys, double korkeus)
+    /// <param name="position"></param>
+    /// <param name="width"></param>
+    /// <param name="height"></param>
+    /// <param name="character"></param>
+    public void CreateCorner(Vector position, double width, double height, char character)
     {
-        GameObject polku = new GameObject(leveys, korkeus);
-        polku.Position = paikka;
-        polku.Tag = "Polku";
-        Add(polku, -1);
+        route.Add(character, position);
+        CreatePath(position, width, height);
     }
 
     /// <summary>
-    /// Luodaan reitin kulma, jossa oli kääntyy kohti seuraavaa kulmaa.
+    /// Target which you must protect.
     /// </summary>
-    /// <param name="paikka">Paikka.</param>
-    /// <param name="leveys">Kulmaan tulevan "reittipalan" leveys.</param>
-    /// <param name="korkeus">Kulmaan tulevan "reittipalan" korkeus.</param>
-    /// <param name="merkki">Taulukossa oleva merkki</param>
-    public void LuoKulma(Vector paikka, double leveys, double korkeus, char merkki)
+    public void CreateTarget()
     {
-        reitti.Add(merkki, paikka);
-        LuoPolku(paikka, leveys, korkeus);
+        target = new Target(50, 70, 500, castle);
+        target.Position = route.Values[route.Count - 1];// + new Vector(15, 10);
+
+        Add(target);
+
+        target.Destroyed += delegate { End(); };
     }
 
     /// <summary>
-    /// Suojeltava kohde.
+    /// You lost!
     /// </summary>
-    public void LuoKohde()
+    public void End()
     {
-        kohde = new Target(50, 70, 500, jyfl);
-        kohde.Position = reitti.Values[reitti.Count - 1] + new Vector(15, 10);
-
-        Add(kohde);
-
-        kohde.Destroyed += delegate { Loppu(); };
-    }
-
-    /// <summary>
-    /// Hävisit pelin. Aina ei voi voittaa
-    /// </summary>
-    public void Loppu()
-    {
-        MultiSelectWindow valikko =
-            new MultiSelectWindow("Hävisit pelin!", "Aloita alusta", "Parhaat pisteet", "Lopeta");
-        Add(valikko);
-        valikko.AddItemHandler(0, Begin);
-        valikko.AddItemHandler(1, Pisteet);
-        valikko.AddItemHandler(2, Exit);
+        MultiSelectWindow menu =
+            new MultiSelectWindow("You lost!", "Try again", "Highscores", "Quit");
+        Add(menu);
+        menu.AddItemHandler(0, Begin);
+        menu.AddItemHandler(1, Points);
+        menu.AddItemHandler(2, Exit);
         IsPaused = true;
     }
 
     /// <summary>
-    /// Parhaiden pelaajien pisteet. Mitä enemmän rahaa sinulla oli jäljellä, sitä korkeammalle pääset.
+    /// Highscore window.
     /// </summary>
-    public void Pisteet()
+    public void Points()
     {
         HighScoreWindow pisteIkkuna;
-        if (lisatty == false)
+        if (pointsAdded == false)
         {
-            pisteIkkuna = new HighScoreWindow("Tapettuja vihollisia",
-                "Onneksi olkoon, tapoit %p! vihollista. Syötä nimesi:", pistelista, tapettujaVihollisia.Value);
-            lisatty = true;
+            pisteIkkuna = new HighScoreWindow("Enemies killed",
+                "Yay, you killed %p! enemies. What is your name:", pointlist, enemyKillCount.Value);
+            pointsAdded = true;
         }
         else
         {
-            pisteIkkuna = new HighScoreWindow("Parhaat pisteet", pistelista);
+            pisteIkkuna = new HighScoreWindow("Enemies killed", pointlist);
         }
 
         pisteIkkuna.Closed += delegate
         {
-            DataStorage.Save(pistelista, "pisteet.xml");
-            Loppu();
-            lisatty = true;
+            DataStorage.Save(pointlist, "points.xml");
+            End();
+            pointsAdded = true;
         };
         Add(pisteIkkuna);
     }
 
     /// <summary>
-    /// Hiiren klikkauksia seuraava aliohjelma.
+    /// Handles mouse actions.
     /// </summary>
-    public void Hiiri()
+    public void MouseHandler()
     {
-        //Luodaan listat pelialueella olevista objekteista.
-        List<GameObject> tykit = GetObjectsWithTag("Tykki");
-        List<GameObject> nappulat = GetObjectsWithTag("Nappula");
-        List<GameObject> reitti = GetObjectsWithTag("Polku");
-        bool nappula = false;
-        bool tykki = false;
-        bool polku = false;
-        bool jotainKlikattu = false;
+        List<GameObject> cannons = GetObjectsWithTag("Cannon");
+        List<GameObject> buttons = GetObjectsWithTag("Buttons");
+        List<GameObject> route = GetObjectsWithTag("Path");
 
-        //Verrataan hiiren sijaintia listojen objekteihin.
-        foreach (Cannon t in tykit)
+        bool button = false;
+        bool cannon = false;
+        bool path = false;
+        bool somethingClicked = false;
+
+        // is mouse on a cannon?
+        foreach (Cannon t in cannons)
         {
-            tykki = Mouse.IsCursorOn(t);
-            if (tykki)
+            cannon = Mouse.IsCursorOn(t);
+            if (cannon)
             {
-                jotainKlikattu = true;
-                raha.Value = t.PaivitaTykki(raha.Value);
+                somethingClicked = true;
+                t.Upgrade(money);
             }
         }
 
-        int sijainti = 0;
-        foreach (GameObject n in nappulat)
+        // cannon selector
+        int position = 0;
+        foreach (GameObject n in buttons)
         {
-            nappula = Mouse.IsCursorOn(n);
-            sijainti++;
+            button = Mouse.IsCursorOn(n);
+            position++;
 
-            if (nappula)
+            if (button)
             {
-                jotainKlikattu = true;
-                ValitseTykki(sijainti);
+                somethingClicked = true;
+                SelectCannon(position);
             }
         }
 
-        foreach (GameObject p in reitti)
+        // is mouse on a route
+        foreach (GameObject p in route)
         {
-            polku = Mouse.IsCursorOn(p);
-            if (polku)
+            path = Mouse.IsCursorOn(p);
+            if (path)
             {
-                jotainKlikattu = true;
+                somethingClicked = true;
             }
         }
 
-        if (!jotainKlikattu)
+        if (!somethingClicked)
         {
-            RakennaTykki();
+            BuildCannon();
         }
     }
 
     /// <summary>
-    /// Luo tornin hiiren sijaintiin.
+    /// Create a tower on mouses location
     /// </summary>
-    public void RakennaTykki()
+    public void BuildCannon()
     {
-        if (raha.Value >= (int) tykit[valittuTykki, 0])
+        if (money.Value >= (int) cannons[cannonSelected, 0])
         {
-            Cannon torni = new Cannon((int) tykit[valittuTykki, 0], (int) tykit[valittuTykki, 1],
-                (double) tykit[valittuTykki, 2], (Image) tykit[valittuTykki, 3]);
-            torni.Versio = 0;
-            torni.AmmuksenVari = (Color) tykit[valittuTykki, 5];
+            Cannon cannon = new Cannon((int) cannons[cannonSelected, 0], (int) cannons[cannonSelected, 1],
+                (double) cannons[cannonSelected, 2], (Image) cannons[cannonSelected, 3]);
+            cannon.Level = 0;
+            cannon.AmmoColor = (Color) cannons[cannonSelected, 5];
 
-            torni.Position = Mouse.PositionOnWorld;
+            cannon.Position = Mouse.PositionOnWorld;
 
-            if (tykit[valittuTykki, 4] == null)
+            if (cannons[cannonSelected, 4] == null)
             {
-                torni.AmpumisAjastin = new Timer();
-                torni.AmpumisAjastin.Interval = (double) tykit[valittuTykki, 2];
-                torni.AmpumisAjastin.Timeout += delegate { torni.Ammu(); };
-                torni.AmpumisAjastin.Start();
+                cannon.ShootTimer = new Timer();
+                cannon.ShootTimer.Interval = (double) cannons[cannonSelected, 2];
+                cannon.ShootTimer.Timeout += delegate { cannon.Shoot(); };
+                cannon.ShootTimer.Start();
             }
             else
             {
-                torni.Burst = new Timer();
-                torni.Burst.Interval = (int) tykit[valittuTykki, 4];
-                torni.Burst.Timeout += delegate { torni.BurstFire((double) tykit[valittuTykki, 2]); };
-                torni.Burst.Start();
-                torni.BurstFire((double) tykit[valittuTykki,
-                    2]); // peli kaatuu jos tykin päivittää ennen kuin se on ampunut kertaakaan.
+                cannon.BurstTimer = new Timer();
+                cannon.BurstTimer.Interval = (int) cannons[cannonSelected, 4];
+                cannon.BurstTimer.Timeout += delegate { cannon.BurstFire((double) cannons[cannonSelected, 2]); };
+                cannon.BurstTimer.Start();
+                cannon.BurstFire((double) cannons[cannonSelected,
+                    2]); // TODO: Fix game crashing if burstcannon is updated before it fires for the first time
             }
 
-            Add(torni, +1);
-            raha.Value -= (int) tykit[valittuTykki, 0];
+            Add(cannon, +1);
+            money.Value -= (int) cannons[cannonSelected, 0];
 
-            //Luodaan ajastin joka kääntää tornin osoittamaan kohti kohdettaan.
-            torni.KaantymisAjastin = new Timer();
-            torni.KaantymisAjastin.Interval = 0.1;
-            torni.KaantymisAjastin.Timeout += delegate { torni.KaannaTykki(); };
-            torni.KaantymisAjastin.Start();
+            // Tower aiming timer
+            cannon.TurnTimer = new Timer();
+            cannon.TurnTimer.Interval = 0.1;
+            cannon.TurnTimer.Timeout += delegate { cannon.Aim(); };
+            cannon.TurnTimer.Start();
         }
     }
 
     /// <summary>
-    /// Muuttuja, joka seuraa mikä tykki on valittuna.
+    /// What cannon is selected for building
     /// </summary>
-    private int valittuTykki = 1;
+    private int cannonSelected = 1;
 
-    private GameObject valinta;
+    private GameObject cannonSelection;
 
-    public void ValitseTykki(int tykki)
+    public void SelectCannon(int cannon)
     {
-        valittuTykki = tykki - 1;
-        valinta.X = Level.Left + valittuTykki * 10 + 10;
-        valinta.Y = Level.Top + 20;
+        cannonSelected = cannon - 1;
+        cannonSelection.X = Level.Left + cannonSelected * 10 + 10;
+        cannonSelection.Y = Level.Top + 20;
     }
 
     /// <summary>
-    /// Näyttää valittavissa olevat tykit yläkulmassa.
+    /// Show buildable cannons on the top left corner
     /// </summary>
-    public void NaytaTykit()
+    public void ShowCannons()
     {
-        //Käydään läpi kaikki tykit ja piirretään niitä vastaavat neliöt (myöhemmin tekstuurit)
-        //Ruudun ylänurkkaan nättiin riviin
-        int tykkeja = tykit.GetLength(0);
+        int cannons = this.cannons.GetLength(0);
 
-        valinta = NaytaValinta();
+        cannonSelection = ShowSelection();
 
-        for (int i = 0; i < tykkeja; i++)
+        for (int i = 0; i < cannons; i++)
         {
-            GameObject nappula = new GameObject(10, 10, Shape.Rectangle);
-            nappula.X = Level.Left + i * 10 + 10;
-            nappula.Y = Level.Top + 20;
-            nappula.Image = (Image) tykit[i, 3];
-            nappula.Tag = "Nappula";
-            Add(nappula, 3);
+            GameObject button = new GameObject(10, 10, Shape.Rectangle);
+            button.X = Level.Left + i * 10 + 10;
+            button.Y = Level.Top + 20;
+            button.Image = (Image) this.cannons[i, 3];
+            button.Tag = "Button";
+            Add(button, 3);
         }
     }
 
     /// <summary>
-    /// Laittaa valitun tykin ympärille keltaisen neliön.
+    /// Shows selected cannon with a yellow square
     /// </summary>
-    /// <param name="valinta">Valittu tykki</param>
-    public GameObject NaytaValinta()
+    public GameObject ShowSelection()
     {
-        GameObject valinta = new GameObject(10, 10, Shape.Rectangle);
-        valinta.Color = Color.Yellow;
-        Add(valinta, 2);
-        return valinta;
+        GameObject selection = new GameObject(10, 10, Shape.Rectangle);
+        selection.Color = Color.Yellow;
+        Add(selection, 2);
+        return selection;
     }
 
     /// <summary>
-    /// Aliohjelma joka etsii annettua tykkiä lähinnä olevan vihollisen
+    /// Finds nearest enemy to a given cannon
     /// </summary>
-    /// <returns>Lähin vihollinen</returns>
-    /// <param name="Torni">Torni</param>
-    public PhysicsObject EtsiVihollinen(Cannon torni)
+    /// <returns>Nearest enemy</returns>
+    /// <param name="cannon">cannon</param>
+    public PhysicsObject FindEnemy(Cannon cannon)
     {
-        PhysicsObject kohde = null;
+        PhysicsObject nearestEnemy = null;
 
-        double lyhin = double.MaxValue;
-        //Etsitään lähin vihollinen
-        foreach (PhysicsObject vihu in GetObjectsWithTag("Vihollinen"))
+        double shortestDist = double.MaxValue;
+
+        foreach (PhysicsObject enemy in GetObjectsWithTag("Enemy"))
         {
-            double etaisyys = Vector.Distance(vihu.Position, torni.Position);
+            double dist = Vector.Distance(enemy.Position, cannon.Position);
 
-            if (etaisyys < lyhin)
+            if (dist < shortestDist)
             {
-                lyhin = etaisyys;
-                kohde = vihu;
+                shortestDist = dist;
+                nearestEnemy = enemy;
             }
         }
 
-        return kohde;
+        return nearestEnemy;
     }
 }

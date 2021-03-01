@@ -4,37 +4,36 @@ using Jypeli.Assets;
 using Jypeli.Widgets;
 
 /// <summary>
-/// Vihollisen luokka.
-/// Siältää kaikki vihollisten ominaisuuksista vastaavat toiminnot.
+/// Enemy which tries to get to the protectable target
 /// </summary>
 public class Enemy : PhysicsObject
 {
-	public IntMeter Elamalaskuri { get; private set; }
+	public IntMeter Health { get; private set; }
 
-	public int Arvo { get; set; }
+	public int Value { get; set; }
 
-	public Enemy (double leveys, double korkeus, int elamaa, int arvo, Image kuva, int speed, SortedList<char, Vector> reitti)
-		: base (leveys, korkeus)
+	public Enemy (double width, double heigh, int health, int value, Image image, int speed, SortedList<char, Vector> route)
+		: base (width, heigh)
 	{
-		Arvo = arvo;
+		Value = value;
 
-		Elamalaskuri = new IntMeter (elamaa, 0, elamaa);
-		Image = kuva;
-		Elamalaskuri.LowerLimit += Destroy;
-		Tag = "Vihollinen";
+		Health = new IntMeter (health, 0, health);
+		Image = image;
+		Health.LowerLimit += Destroy;
+		Tag = "Enemy";
 		CanRotate = false;
 		IgnoresCollisionResponse = true;
 		
 		//Vihollisen tekoäly, joka toimii ehkä vähän hassusti.
-		PathFollowerBrain polkuAivot = new PathFollowerBrain (new List<Vector> (reitti.Values));
-		polkuAivot.Speed = speed;
-		Brain = polkuAivot;
+		PathFollowerBrain brain = new PathFollowerBrain (new List<Vector> (route.Values));
+		brain.Speed = speed;
+		Brain = brain;
 		
-		ProgressBar ElamaPalkki = new ProgressBar (leveys, 3, Elamalaskuri);
-		ElamaPalkki.BarColor = Color.DarkGreen;
-		ElamaPalkki.Color = Color.BloodRed;
-		ElamaPalkki.Bottom = Bottom - 5;
-		Add (ElamaPalkki);
+		ProgressBar HealthBar = new ProgressBar (width, 3, Health);
+		HealthBar.BarColor = Color.DarkGreen;
+		HealthBar.Color = Color.BloodRed;
+		HealthBar.Bottom = Bottom - 5;
+		Add(HealthBar);
 	}
 }
 

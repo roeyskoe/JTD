@@ -2,123 +2,113 @@
 using Jypeli;
 
 /// <summary>
-/// Tykkien luokka. 
-/// Asettaa tykeille niille kuuluvan tekstuurin, nopeuden yms.
+/// Cannon
 /// </summary>
 public class Cannon : GameObject
 {
-	public double Hinta { get; set; }
-	public int Vahinko { get; set; }
-	public double Nopeus { get; set; }
-	public Image kuva { get; set; }
-	public int Versio { get; set; }
-	public Color AmmuksenVari { get; set; }
+	public double Price { get; set; }
+	public int Damage { get; set; }
+	public double speed { get; set; }
+	public int Level { get; set; }
+	public Color AmmoColor { get; set; }
 
-	public Timer AmpumisAjastin { get; set; }
-	public Timer Burst { get; set; }
+	public Timer ShootTimer { get; set; }
+	public Timer BurstTimer { get; set; }
+	public Timer TurnTimer { get; set; }
 
-	public Timer KaantymisAjastin { get; set; }
-
-	public Cannon (double hinta, int vahinko, double nopeus, Image kuva)
+	public Cannon (double price, int damage, double speed, Image image)
 		: base (35, 35)
 	{
-		Hinta = hinta;
-		Vahinko = vahinko;
-		Nopeus = nopeus;
-		Image = kuva;
-		Tag = "Tykki";
-		AmmuksenVari = AmmuksenVari;
+		Price = price;
+		Damage = damage;
+		this.speed = speed;
+		Image = image;
+		Tag = "Cannon";
+		AmmoColor = AmmoColor;
 	}
 
 	/// <summary>
-	/// Käsittelee ammuksen osuman viholliseen.
+	/// When ammo hits an enemy.
 	/// </summary>
-	/// <param name="ammus">Ammus.</param>
-	/// <param name="vihollinen">Vihollinen.</param>
-	public void OsuuViholliseen (PhysicsObject ammus, PhysicsObject vihollinen)
+	/// <param name="ammo">Ammo.</param>
+	/// <param name="enemy">Enemy.</param>
+	public void TargetHit(PhysicsObject ammo, PhysicsObject enemy)
 	{
-		ammus.Destroy ();
-		((Enemy)vihollinen).Elamalaskuri.Value -= Vahinko;
+		ammo.Destroy();
+		((Enemy)enemy).Health.Value -= Damage;
 	}
 	
 	/// <summary>
-	/// Kääntää tornin vihollista kohti.
-	/// Muutos on ainoastaan kosmeettinen eikä vaikuta mitenkään sen toimintaan.
+	/// Turns the cannon towards the nearest enemy
 	/// </summary>
-	/// <param name="Torni">Torni.</param>
-	public void KaannaTykki ()
+	public void Aim()
 	{
-		PhysicsObject kohde = ((JTD)JTD.Instance).EtsiVihollinen(this);
-		if (kohde != null) {
-			Vector Suunta = (kohde.Position - Position).Normalize ();
-			Angle = Suunta.Angle;
+		PhysicsObject nearestEnemy = ((JTD)JTD.Instance).FindEnemy(this);
+		if (nearestEnemy != null) {
+			Vector direction = (nearestEnemy.Position - Position).Normalize();
+			Angle = direction.Angle;
 		}
 	}
 	
 	/// <summary>
-	/// Aliohjelma joka vastaa tykkien ampumisesta
+	/// Shoot
 	/// </summary>
-	/// <param name="Torni">Torni.</param>
-	public void Ammu ()
+	public void Shoot()
 	{
-		PhysicsObject kohde = ((JTD)JTD.Instance).EtsiVihollinen(this);
+		PhysicsObject nearestEnemy = ((JTD)JTD.Instance).FindEnemy(this); // TODO: nearest enemy is searched twice
 
-		if (kohde != null) // Tarkistetaan löytyikö vihollista
+		if (nearestEnemy != null)
 		{
-			PhysicsObject ammus = new PhysicsObject (5, 5, Shape.Circle);
-			ammus.Position = Position;
-			ammus.Color = AmmuksenVari;
-			ammus.LifetimeLeft = TimeSpan.FromSeconds (2);
+			PhysicsObject ammo = new PhysicsObject (5, 5, Shape.Circle);
+			ammo.Position = Position;
+			ammo.Color = AmmoColor;
+			ammo.LifetimeLeft = TimeSpan.FromSeconds(2);
 
-			JTD.Instance.Add (ammus);
+			JTD.Instance.Add(ammo);
 
-			//Luodaan pieni "korjauskerroin" jotta tykit osaavat tähdätä ennakkoon, mutta
-			//kerrotaan se pienellä satunnaisuudella jotta tykit eivät olisi aivan liian tarkkoja.
-			Vector nopeus = kohde.Velocity;
-			Vector etaisyys = kohde.Position - Position;
-			Vector tahtayskorjain = etaisyys * 0.1 + nopeus * RandomGen.NextDouble (0.05, 2);
+			// Minor fix for ammo direction, needs more tweaking.
+			Vector enemySpeed = nearestEnemy.Velocity;
+			Vector enemyDist = nearestEnemy.Position - Position;
+			Vector dirFix = enemyDist * 0.2 + enemySpeed * RandomGen.NextDouble (0.05, 2);
 
-			//Ammukset saattavat mennä suurilla nopueksilla vihollisesta läpi jos siltä tuntuu
-			double ammuksenNopeus = 500;
-			Vector Suunta = (kohde.Position - Position).Normalize ();
-			ammus.Hit (ammus.Mass * Suunta * ammuksenNopeus + tahtayskorjain);
+			double power = 500;
+			Vector direction = (nearestEnemy.Position - Position).Normalize ();
+			ammo.Hit (ammo.Mass * direction * power + dirFix);
 
-			JTD.Instance.AddCollisionHandler (ammus, "Vihollinen", OsuuViholliseen);
+			JTD.Instance.AddCollisionHandler (ammo, "Enemy", TargetHit);
 		}
 	}
 	
 	
-	public void BurstFire(double nopeus)
+	public void BurstFire(double speed)
 	{
-		AmpumisAjastin = new Timer ();
-		AmpumisAjastin.Interval = nopeus;
-		AmpumisAjastin.Timeout += delegate { Ammu(); };
-		AmpumisAjastin.Start (3);
+		ShootTimer = new Timer ();
+		ShootTimer.Interval = speed;
+		ShootTimer.Timeout += delegate { Shoot(); };
+		ShootTimer.Start (3);
 	}
-	
-	
+
+
 	/// <summary>
-	/// Päivittää tornin ominaisuuksia paremmiksi.
+	/// Upgrade cannon for more power.
 	/// </summary>
-	/// <param name="Torni"></param>
-	public int PaivitaTykki (int raha)
+	/// <param name="money">Players money</param>
+	public void Upgrade(IntMeter money)
 	{
-		Color [] varit = { Color.Red, Color.Green, Color.Blue, Color.White };
-		if (raha >= Hinta * 2 && Versio < 4) {
-			Versio++;
-			AmpumisAjastin.Interval = AmpumisAjastin.Interval * 0.9;
-			Vahinko = Convert.ToInt32 (Vahinko * 1.5);
-			Image kuva = Image.Clone ();
+		Color[] colors = { Color.Red, Color.Green, Color.Blue, Color.White };
+		if (money.Value >= Price * 2 && Level < 4) {
+			Level++;
+			ShootTimer.Interval = ShootTimer.Interval * 0.9;
+			Damage = Convert.ToInt32 (Damage * 1.5);
+			Image image = Image.Clone(); // Edit image pixels directly for a new texture.
 			for (int i = 2; i < 4; i++) {
 				for (int j = 13; j < 20; j++)
-					kuva [j, kuva.Height - i] = varit [Versio - 1]; // Muutetaan kuvan pikseleitä.
+					image [j, image.Height - i] = colors[Level - 1];
 			}
-			Image = kuva;
-			Hinta = Hinta * 2;
-			raha -= Convert.ToInt32 (Hinta);
+			Image = image;
+			Price = Price * 2;
+			money.Value -= Convert.ToInt32(Price);
 		}
-
-		return raha;
 	}
 
 }
