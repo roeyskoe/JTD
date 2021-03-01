@@ -81,8 +81,8 @@ namespace JTD
                 JTD.Instance.AddCollisionHandler(ammo, "Enemy", TargetHit);
             }
         }
-
-
+        
+        
         public void BurstFire(double speed)
         {
             ShootTimer = new Timer();

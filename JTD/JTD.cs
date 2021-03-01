@@ -20,15 +20,10 @@ namespace JTD
             enemy4 = LoadImage("enemy4.png");
 
         private Image castle = LoadImage("castle.png");
-        private ScoreList pointlist;
-        private IntMeter enemyKillCount;
         private SortedList<char, Vector> route;
         private object[,] cannons;
         private object[,] enemies;
-        private int level;
-        private int enemiesAlive;
         private bool pointsAdded;
-        private IntMeter money;
         private Target target;
 
         /// <summary>
@@ -37,15 +32,18 @@ namespace JTD
         public override void Begin()
         {
             ClearAll();
-
+            
             IsPaused = false;
 
-            level = 1;
-            enemiesAlive = 0;
-            cannonSelected = 1;
+            GameManager.CannonSelected = 1;
 
-            pointlist = new ScoreList(10, false, 0);
-
+            
+            
+            GameManager.Level = 1;
+            GameManager.EnemiesAlive = 0;
+            GameManager.Money = new IntMeter(1000);
+            GameManager.KillCount = new IntMeter(0);
+            
             enemies = new object[,]
             {
                 {3, 100, 30, enemy1},
@@ -69,14 +67,13 @@ namespace JTD
             Controllers();
             CreateMoneyCounter();
             ShowCannons();
-            SelectCannon(cannonSelected);
+            SelectCannon(GameManager.CannonSelected);
             KillCounter();
 
             Wave();
 
             Camera.ZoomToAllObjects();
 
-            pointlist = DataStorage.TryLoad(pointlist, "points.xml");
             pointsAdded = false;
         }
 
@@ -94,7 +91,7 @@ namespace JTD
             Keyboard.Listen(Key.D3, ButtonState.Pressed, SelectCannon, "Select 3rd cannon", 3);
             Keyboard.Listen(Key.D4, ButtonState.Pressed, SelectCannon, "Select 4th cannon", 4);
 #if DEBUG
-            Keyboard.Listen(Key.Enter, ButtonState.Pressed, delegate { money.Value += 10000; }, "Debugmoney", 4);
+            Keyboard.Listen(Key.Enter, ButtonState.Pressed, delegate { GameManager.Money.Value += 10000; }, "Debugmoney", 4);
 #endif
         }
 
@@ -103,8 +100,6 @@ namespace JTD
         /// </summary>
         public void CreateMoneyCounter()
         {
-            money = new IntMeter(1000);
-
             Label rahaLaskuri = new Label();
             rahaLaskuri.X = Screen.Left + 70;
             rahaLaskuri.Y = Screen.Top - 20;
@@ -112,7 +107,7 @@ namespace JTD
             rahaLaskuri.Color = Color.White;
             rahaLaskuri.IntFormatString = "Money: {0:D3}";
 
-            rahaLaskuri.BindTo(money);
+            rahaLaskuri.BindTo(GameManager.Money);
             Add(rahaLaskuri);
         }
 
@@ -121,8 +116,6 @@ namespace JTD
         /// </summary>
         public void KillCounter()
         {
-            enemyKillCount = new IntMeter(0);
-
             Label tappoLaskuri = new Label();
             tappoLaskuri.X = Level.Right + 30;
             tappoLaskuri.Y = Level.Top + 70;
@@ -130,7 +123,7 @@ namespace JTD
             tappoLaskuri.Color = Color.White;
             tappoLaskuri.IntFormatString = "Kills: {0}";
 
-            tappoLaskuri.BindTo(enemyKillCount);
+            tappoLaskuri.BindTo(GameManager.KillCount);
             Add(tappoLaskuri);
         }
 
@@ -142,7 +135,7 @@ namespace JTD
             Timer ajastin = new Timer();
             ajastin.Interval = 0.5;
             ajastin.Timeout += CreateEnemy;
-            ajastin.Start(level + 2);
+            ajastin.Start(GameManager.Level + 2);
         }
 
         /// <summary>
@@ -151,7 +144,7 @@ namespace JTD
         public void CreateEnemy()
         {
             int i = RandomGen.NextInt(0, 4);
-            Enemy enemy = new Enemy(15, 15, (int) enemies[i, 0] * level, (int) enemies[i, 2], (Image) enemies[i, 3],
+            Enemy enemy = new Enemy(15, 15, (int) enemies[i, 0] * GameManager.Level, (int) enemies[i, 2], (Image) enemies[i, 3],
                 (int) enemies[i, 1], route);
             enemy.Position = route.Values[0];
 
@@ -166,7 +159,7 @@ namespace JTD
             });
             enemy.Destroyed += delegate { Kill(enemy); };
 
-            enemiesAlive++;
+            GameManager.EnemiesAlive++;
         }
 
         /// <summary>
@@ -175,15 +168,15 @@ namespace JTD
         /// <param name="Vihu"></param>
         public void Kill(Enemy enemy)
         {
-            money.Value += enemy.Value;
-            enemyKillCount.Value++;
+            GameManager.Money.Value += enemy.Value;
+            GameManager.KillCount.Value++;
 
-            enemiesAlive--;
+            GameManager.EnemiesAlive--;
 
-            if (enemiesAlive == 0)
+            if (GameManager.EnemiesAlive == 0)
             {
                 Wave();
-                level++;
+                GameManager.Level++;
             }
         }
 
@@ -280,25 +273,28 @@ namespace JTD
         /// </summary>
         public void Points()
         {
-            HighScoreWindow pisteIkkuna;
+            ScoreList pointlist = new ScoreList(10, false, 0);
+            pointlist = DataStorage.TryLoad(pointlist, "points.xml");
+            
+            HighScoreWindow pointWindow;
             if (pointsAdded == false)
             {
-                pisteIkkuna = new HighScoreWindow("Enemies killed",
-                    "Yay, you killed %p! enemies. What is your name:", pointlist, enemyKillCount.Value);
+                pointWindow = new HighScoreWindow("Enemies killed",
+                    "Yay, you killed %p! enemies. What is your name:", pointlist, GameManager.KillCount.Value);
                 pointsAdded = true;
             }
             else
             {
-                pisteIkkuna = new HighScoreWindow("Enemies killed", pointlist);
+                pointWindow = new HighScoreWindow("Enemies killed", pointlist);
             }
 
-            pisteIkkuna.Closed += delegate
+            pointWindow.Closed += delegate
             {
                 DataStorage.Save(pointlist, "points.xml");
                 End();
                 pointsAdded = true;
             };
-            Add(pisteIkkuna);
+            Add(pointWindow);
         }
 
         /// <summary>
@@ -322,7 +318,7 @@ namespace JTD
                 if (cannon)
                 {
                     somethingClicked = true;
-                    t.Upgrade(money);
+                    t.Upgrade(GameManager.Money);
                 }
             }
 
@@ -361,7 +357,8 @@ namespace JTD
         /// </summary>
         public void BuildCannon()
         {
-            if (money.Value >= (int) cannons[cannonSelected, 0])
+            int cannonSelected = GameManager.CannonSelected;
+            if (GameManager.Money.Value >= (int) cannons[cannonSelected, 0])
             {
                 Cannon cannon = new Cannon((int) cannons[cannonSelected, 0], (int) cannons[cannonSelected, 1],
                     (double) cannons[cannonSelected, 2], (Image) cannons[cannonSelected, 3]);
@@ -388,7 +385,7 @@ namespace JTD
                 }
 
                 Add(cannon, +1);
-                money.Value -= (int) cannons[cannonSelected, 0];
+                GameManager.Money.Value -= (int) cannons[cannonSelected, 0];
 
                 // Tower aiming timer
                 cannon.TurnTimer = new Timer();
@@ -398,17 +395,12 @@ namespace JTD
             }
         }
 
-        /// <summary>
-        /// What cannon is selected for building
-        /// </summary>
-        private int cannonSelected = 1;
-
         private GameObject cannonSelection;
 
         public void SelectCannon(int cannon)
         {
-            cannonSelected = cannon - 1;
-            cannonSelection.X = Level.Left + cannonSelected * 10 + 10;
+            GameManager.CannonSelected = cannon - 1;
+            cannonSelection.X = Level.Left + GameManager.CannonSelected * 10 + 10;
             cannonSelection.Y = Level.Top + 20;
         }
 
