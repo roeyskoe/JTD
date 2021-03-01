@@ -1,4 +1,6 @@
-﻿using Jypeli;
+﻿using System.Collections.Generic;
+using Jypeli;
+using Jypeli.Assets;
 using Jypeli.Widgets;
 
 /// <summary>
@@ -11,7 +13,7 @@ public class Enemy : PhysicsObject
 
 	public int Arvo { get; set; }
 
-	public Enemy (double leveys, double korkeus, int elamaa, int arvo, Image kuva)
+	public Enemy (double leveys, double korkeus, int elamaa, int arvo, Image kuva, int speed, SortedList<char, Vector> reitti)
 		: base (leveys, korkeus)
 	{
 		Arvo = arvo;
@@ -21,7 +23,13 @@ public class Enemy : PhysicsObject
 		Elamalaskuri.LowerLimit += Destroy;
 		Tag = "Vihollinen";
 		CanRotate = false;
-
+		IgnoresCollisionResponse = true;
+		
+		//Vihollisen tekoäly, joka toimii ehkä vähän hassusti.
+		PathFollowerBrain polkuAivot = new PathFollowerBrain (new List<Vector> (reitti.Values));
+		polkuAivot.Speed = speed;
+		Brain = polkuAivot;
+		
 		ProgressBar ElamaPalkki = new ProgressBar (leveys, 3, Elamalaskuri);
 		ElamaPalkki.BarColor = Color.DarkGreen;
 		ElamaPalkki.Color = Color.BloodRed;

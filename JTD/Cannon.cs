@@ -88,6 +88,15 @@ public class Cannon : GameObject
 	}
 	
 	
+	public void BurstFire(double nopeus)
+	{
+		AmpumisAjastin = new Timer ();
+		AmpumisAjastin.Interval = nopeus;
+		AmpumisAjastin.Timeout += delegate { Ammu(); };
+		AmpumisAjastin.Start (3);
+	}
+	
+	
 	/// <summary>
 	/// Päivittää tornin ominaisuuksia paremmiksi.
 	/// </summary>

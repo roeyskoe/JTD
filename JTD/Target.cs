@@ -16,6 +16,8 @@ class Target : PhysicsObject
         Elamalaskuri.LowerLimit += Destroy;
         Tag = "JYFL";
         CanRotate = false;
+        IgnoresCollisionResponse = true;
+        IgnoresExplosions = true;
 
         ProgressBar ElamaPalkki = new ProgressBar (leveys, 3, Elamalaskuri);
         ElamaPalkki.BarColor = Color.DarkGreen;
