@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Jypeli;
 using Jypeli.Assets;
 using Jypeli.Widgets;
+using System.Linq;
+using System.Text.Json;
 
 namespace JTD
 {
@@ -22,7 +24,7 @@ namespace JTD
 
         private Image castle = LoadImage("castle.png");
         private SortedList<char, Vector> route;
-        private List<Cannon> cannons;
+        private Dictionary<string,CannonTemplate> cannons;
         private object[,] enemies;
         private bool pointsAdded;
         private Target target;
@@ -33,10 +35,9 @@ namespace JTD
         public override void Begin()
         {
             ClearAll();
+
             
             IsPaused = false;
-
-            GameManager.CannonSelected = 1;
 
             GameManager.Level = 1;
             GameManager.EnemiesAlive = 0;
@@ -50,29 +51,9 @@ namespace JTD
                 {7, 60, 50, enemy3},
                 {9, 20, 70, enemy4}
             }; //lifepoints, speed, value, texture
-
-            /*
-            CannonTemplate[] cannonTemplates = new[]
-            {
-                new CannonTemplate {Price = 300, Damage = 1, Interval = 1, Image = cannon1, AmmoColor = Color.Black, ShootAction = (c) => c.Shoot()},
-                new CannonTemplate {Price = 500, Damage = 3, Interval = 2, Image = cannon2, AmmoColor = Color.Red, ShootAction = (c) => {
-                    Timer t = new Timer(0.1);
-                    t.Timeout += c.Shoot;
-                    t.Start(3);
-                }},
-                new CannonTemplate {Price = 900, Damage = 5, Interval = 0.3, Image = cannon3, AmmoColor = Color.LimeGreen, ShootAction = (c) => c.Shoot()},
-                new CannonTemplate {Price = 1000, Damage = 8, Interval = 0.6, Image = cannon4, AmmoColor = Color.Blue, ShootAction = (c) => c.Shoot()}
-            };
-*/
-            cannons = CannonReader.Read();
-            /*cannons = new object[,]
-            {
-                {300, 1, 1.0, cannon1, null, Color.Black},
-                {500, 3, 2.0, cannon2, 0.1, Color.Red},
-                {900, 5, 0.3, cannon3, null, Color.LimeGreen},
-                {1000, 8, 0.6, cannon4, null, Color.Blue}
-            }; //Price, damage, speed, texture, burst speed, ammo color
-*/
+            
+            cannons = JsonSerializer.Deserialize<Dictionary<string,CannonTemplate>>(System.IO.File.ReadAllText("Content/CannonDefinitions.json"));
+            
             SetWindowSize(1000, 600);
 
             Level.Background.Image = grass;
@@ -80,7 +61,7 @@ namespace JTD
             Controllers();
             CreateMoneyCounter();
             ShowCannons();
-            SelectCannon(GameManager.CannonSelected);
+            SelectCannon(1);
             KillCounter();
 
             Wave();
@@ -370,19 +351,12 @@ namespace JTD
         /// </summary>
         public void BuildCannon()
         {
-            Cannon cannon = cannons[GameManager.CannonSelected];
-            if (GameManager.Money.Value >= cannon.Price)
+            CannonTemplate selected = cannons[GameManager.CannonSelected];
+            
+            if (GameManager.Money.Value >= selected.Price)
             {
-                
+                Cannon cannon = new Cannon(selected);
                 cannon.Position = Mouse.PositionOnWorld;
-
-                cannon.ShootTimer = new Timer();
-                cannon.ShootTimer.Interval = cannon.Speed;
-                
-                
-                    cannon.ShootTimer.Timeout += delegate { cannon.Shoot(); };
-               
-                cannon.ShootTimer.Start();
 
                 Add(cannon, +1);
                 GameManager.Money.Value -= cannon.Price;
@@ -399,8 +373,9 @@ namespace JTD
 
         public void SelectCannon(int cannon)
         {
-            GameManager.CannonSelected = cannon - 1;
-            cannonSelection.X = Level.Left + GameManager.CannonSelected * 10 + 10;
+            int n = cannon - 1;
+            GameManager.CannonSelected = cannons.Keys.ToArray()[n];
+            cannonSelection.X = Level.Left + n * 10 + 10;
             cannonSelection.Y = Level.Top + 20;
         }
 
@@ -410,16 +385,19 @@ namespace JTD
         public void ShowCannons()
         {
             cannonSelection = ShowSelection();
-
-            for (int i = 0; i < cannons.Count; i++)
+            var keys = cannons.Keys;
+            int i = 0;
+            foreach (var key in keys)
             {
                 GameObject button = new GameObject(10, 10, Shape.Rectangle);
                 button.X = Level.Left + i * 10 + 10;
                 button.Y = Level.Top + 20;
-                button.Image = cannons[i].Image;
-                button.Tag = "Button";
+                button.Image = LoadImage(cannons[key].Image);
+                button.Tag = key;
                 Add(button, 3);
+                i++;
             }
+            
         }
 
         /// <summary>

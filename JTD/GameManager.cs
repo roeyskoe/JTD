@@ -11,7 +11,7 @@ namespace JTD
         public static IntMeter KillCount { get; set; }
         public static int Level { get; set; }
         public static int EnemiesAlive { get; set; }
-        public static int CannonSelected { get; set; }
+        public static string CannonSelected { get; set; }
 
         /// <summary>
         /// Add object to game

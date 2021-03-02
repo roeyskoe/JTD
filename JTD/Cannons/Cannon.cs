@@ -15,7 +15,6 @@ namespace JTD
         public Color AmmoColor { get; set; }
 
         public Timer ShootTimer { get; set; }
-        public Timer BurstTimer { get; set; }
         public Timer TurnTimer { get; set; }
 
         public Cannon(int price, int damage, double speed, Image image)
@@ -27,6 +26,36 @@ namespace JTD
             Image = image;
             Tag = "Cannon";
             Level = 0;
+        }
+
+        public Cannon(CannonTemplate cannonTemplate) : base(35,35)
+        {
+            Price = cannonTemplate.Price;
+            Damage = cannonTemplate.Damage;
+            Speed = cannonTemplate.Interval;
+            Image = JTD.LoadImage(cannonTemplate.Image); // TODO: ImageDictionary?
+            Tag = "Cannon";
+
+            AmmoColor = (Color)typeof(Color).GetField(cannonTemplate.AmmoColor).GetValue(null);
+            
+            ShootTimer = new Timer();
+            ShootTimer.Interval = Speed;
+
+            if (cannonTemplate.BurstCount == 0)
+            {
+                ShootTimer.Timeout += Shoot;
+            }
+            else
+            {
+                ShootTimer.Timeout += delegate
+                {
+                    Timer burstTimer = new Timer(cannonTemplate.BurstDelay);
+                    burstTimer.Timeout += Shoot;
+                    burstTimer.Start(cannonTemplate.BurstCount);
+                };
+            }
+            
+            ShootTimer.Start();
         }
 
         /// <summary>
