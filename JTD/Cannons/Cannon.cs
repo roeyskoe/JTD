@@ -8,9 +8,9 @@ namespace JTD
     /// </summary>
     public class Cannon : GameObject
     {
-        public double Price { get; set; }
+        public int Price { get; set; }
         public int Damage { get; set; }
-        public double speed { get; set; }
+        public double Speed { get; set; }
         public int Level { get; set; }
         public Color AmmoColor { get; set; }
 
@@ -18,14 +18,15 @@ namespace JTD
         public Timer BurstTimer { get; set; }
         public Timer TurnTimer { get; set; }
 
-        public Cannon(double price, int damage, double speed, Image image)
+        public Cannon(int price, int damage, double speed, Image image)
             : base(35, 35)
         {
             Price = price;
             Damage = damage;
-            this.speed = speed;
+            Speed = speed;
             Image = image;
             Tag = "Cannon";
+            Level = 0;
         }
 
         /// <summary>

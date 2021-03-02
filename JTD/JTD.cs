@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Jypeli;
 using Jypeli.Assets;
@@ -21,7 +22,7 @@ namespace JTD
 
         private Image castle = LoadImage("castle.png");
         private SortedList<char, Vector> route;
-        private object[,] cannons;
+        private List<Cannon> cannons;
         private object[,] enemies;
         private bool pointsAdded;
         private Target target;
@@ -37,8 +38,6 @@ namespace JTD
 
             GameManager.CannonSelected = 1;
 
-            
-            
             GameManager.Level = 1;
             GameManager.EnemiesAlive = 0;
             GameManager.Money = new IntMeter(1000);
@@ -52,14 +51,28 @@ namespace JTD
                 {9, 20, 70, enemy4}
             }; //lifepoints, speed, value, texture
 
-            cannons = new object[,]
+            /*
+            CannonTemplate[] cannonTemplates = new[]
+            {
+                new CannonTemplate {Price = 300, Damage = 1, Interval = 1, Image = cannon1, AmmoColor = Color.Black, ShootAction = (c) => c.Shoot()},
+                new CannonTemplate {Price = 500, Damage = 3, Interval = 2, Image = cannon2, AmmoColor = Color.Red, ShootAction = (c) => {
+                    Timer t = new Timer(0.1);
+                    t.Timeout += c.Shoot;
+                    t.Start(3);
+                }},
+                new CannonTemplate {Price = 900, Damage = 5, Interval = 0.3, Image = cannon3, AmmoColor = Color.LimeGreen, ShootAction = (c) => c.Shoot()},
+                new CannonTemplate {Price = 1000, Damage = 8, Interval = 0.6, Image = cannon4, AmmoColor = Color.Blue, ShootAction = (c) => c.Shoot()}
+            };
+*/
+            cannons = CannonReader.Read();
+            /*cannons = new object[,]
             {
                 {300, 1, 1.0, cannon1, null, Color.Black},
-                {500, 3, 0.1, cannon2, 2, Color.Red},
+                {500, 3, 2.0, cannon2, 0.1, Color.Red},
                 {900, 5, 0.3, cannon3, null, Color.LimeGreen},
                 {1000, 8, 0.6, cannon4, null, Color.Blue}
             }; //Price, damage, speed, texture, burst speed, ammo color
-
+*/
             SetWindowSize(1000, 600);
 
             Level.Background.Image = grass;
@@ -100,15 +113,15 @@ namespace JTD
         /// </summary>
         public void CreateMoneyCounter()
         {
-            Label rahaLaskuri = new Label();
-            rahaLaskuri.X = Screen.Left + 70;
-            rahaLaskuri.Y = Screen.Top - 20;
-            rahaLaskuri.TextColor = Color.Black;
-            rahaLaskuri.Color = Color.White;
-            rahaLaskuri.IntFormatString = "Money: {0:D3}";
+            Label moneycounter = new Label();
+            moneycounter.X = Screen.Left + 70;
+            moneycounter.Y = Screen.Top - 20;
+            moneycounter.TextColor = Color.Black;
+            moneycounter.Color = Color.White;
+            moneycounter.IntFormatString = "Money: {0:D3}";
 
-            rahaLaskuri.BindTo(GameManager.Money);
-            Add(rahaLaskuri);
+            moneycounter.BindTo(GameManager.Money);
+            Add(moneycounter);
         }
 
         /// <summary>
@@ -116,15 +129,15 @@ namespace JTD
         /// </summary>
         public void KillCounter()
         {
-            Label tappoLaskuri = new Label();
-            tappoLaskuri.X = Level.Right + 30;
-            tappoLaskuri.Y = Level.Top + 70;
-            tappoLaskuri.TextColor = Color.Black;
-            tappoLaskuri.Color = Color.White;
-            tappoLaskuri.IntFormatString = "Kills: {0}";
+            Label killcounter = new Label();
+            killcounter.X = Level.Right + 30;
+            killcounter.Y = Level.Top + 70;
+            killcounter.TextColor = Color.Black;
+            killcounter.Color = Color.White;
+            killcounter.IntFormatString = "Kills: {0}";
 
-            tappoLaskuri.BindTo(GameManager.KillCount);
-            Add(tappoLaskuri);
+            killcounter.BindTo(GameManager.KillCount);
+            Add(killcounter);
         }
 
         /// <summary>
@@ -132,10 +145,10 @@ namespace JTD
         /// </summary>
         public void Wave()
         {
-            Timer ajastin = new Timer();
-            ajastin.Interval = 0.5;
-            ajastin.Timeout += CreateEnemy;
-            ajastin.Start(GameManager.Level + 2);
+            Timer wavetimer = new Timer();
+            wavetimer.Interval = 0.5;
+            wavetimer.Timeout += CreateEnemy;
+            wavetimer.Start(GameManager.Level + 2);
         }
 
         /// <summary>
@@ -357,35 +370,22 @@ namespace JTD
         /// </summary>
         public void BuildCannon()
         {
-            int cannonSelected = GameManager.CannonSelected;
-            if (GameManager.Money.Value >= (int) cannons[cannonSelected, 0])
+            Cannon cannon = cannons[GameManager.CannonSelected];
+            if (GameManager.Money.Value >= cannon.Price)
             {
-                Cannon cannon = new Cannon((int) cannons[cannonSelected, 0], (int) cannons[cannonSelected, 1],
-                    (double) cannons[cannonSelected, 2], (Image) cannons[cannonSelected, 3]);
-                cannon.Level = 0;
-                cannon.AmmoColor = (Color) cannons[cannonSelected, 5];
-
+                
                 cannon.Position = Mouse.PositionOnWorld;
 
-                if (cannons[cannonSelected, 4] == null)
-                {
-                    cannon.ShootTimer = new Timer();
-                    cannon.ShootTimer.Interval = (double) cannons[cannonSelected, 2];
+                cannon.ShootTimer = new Timer();
+                cannon.ShootTimer.Interval = cannon.Speed;
+                
+                
                     cannon.ShootTimer.Timeout += delegate { cannon.Shoot(); };
-                    cannon.ShootTimer.Start();
-                }
-                else
-                {
-                    cannon.BurstTimer = new Timer();
-                    cannon.BurstTimer.Interval = (int) cannons[cannonSelected, 4];
-                    cannon.BurstTimer.Timeout += delegate { cannon.BurstFire((double) cannons[cannonSelected, 2]); };
-                    cannon.BurstTimer.Start();
-                    cannon.BurstFire((double) cannons[cannonSelected,
-                        2]); // TODO: Fix game crashing if burstcannon is updated before it fires for the first time
-                }
+               
+                cannon.ShootTimer.Start();
 
                 Add(cannon, +1);
-                GameManager.Money.Value -= (int) cannons[cannonSelected, 0];
+                GameManager.Money.Value -= cannon.Price;
 
                 // Tower aiming timer
                 cannon.TurnTimer = new Timer();
@@ -409,16 +409,14 @@ namespace JTD
         /// </summary>
         public void ShowCannons()
         {
-            int cannons = this.cannons.GetLength(0);
-
             cannonSelection = ShowSelection();
 
-            for (int i = 0; i < cannons; i++)
+            for (int i = 0; i < cannons.Count; i++)
             {
                 GameObject button = new GameObject(10, 10, Shape.Rectangle);
                 button.X = Level.Left + i * 10 + 10;
                 button.Y = Level.Top + 20;
-                button.Image = (Image) this.cannons[i, 3];
+                button.Image = cannons[i].Image;
                 button.Tag = "Button";
                 Add(button, 3);
             }
