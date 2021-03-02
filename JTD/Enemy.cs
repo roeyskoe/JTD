@@ -26,8 +26,7 @@ namespace JTD
             Tag = "Enemy";
             CanRotate = false;
             IgnoresCollisionResponse = true;
-
-            //Vihollisen tekoäly, joka toimii ehkä vähän hassusti.
+            
             PathFollowerBrain brain = new PathFollowerBrain(new List<Vector>(route.Values));
             brain.Speed = speed;
             Brain = brain;
@@ -37,6 +36,20 @@ namespace JTD
             HealthBar.Color = Color.BloodRed;
             HealthBar.Bottom = Bottom - 5;
             Add(HealthBar);
+            
+            AddCollisionHandler<Ammo>("Ammo", AmmoHit);
+        }
+
+        private void AmmoHit(Ammo ammo)
+        {
+            ammo.Destroy();
+            Health.Value -= ammo.Damage;
+        }
+
+        private void AddCollisionHandler<T>(object tag, IPhysicsObjectExtension.CollisionHandler<T> handler)
+        where T : PhysicsObject
+        {
+            PhysicsObjectExtension.AddCollisionHandler(this, tag, handler);
         }
     }
 }

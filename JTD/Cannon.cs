@@ -26,18 +26,6 @@ namespace JTD
             this.speed = speed;
             Image = image;
             Tag = "Cannon";
-            AmmoColor = AmmoColor;
-        }
-
-        /// <summary>
-        /// When ammo hits an enemy.
-        /// </summary>
-        /// <param name="ammo">Ammo.</param>
-        /// <param name="enemy">Enemy.</param>
-        public void TargetHit(PhysicsObject ammo, PhysicsObject enemy)
-        {
-            ammo.Destroy();
-            ((Enemy) enemy).Health.Value -= Damage;
         }
 
         /// <summary>
@@ -62,12 +50,9 @@ namespace JTD
 
             if (nearestEnemy != null)
             {
-                PhysicsObject ammo = new PhysicsObject(5, 5, Shape.Circle);
+                Ammo ammo = new Ammo(Damage, AmmoColor);
                 ammo.Position = Position;
-                ammo.Color = AmmoColor;
-                ammo.LifetimeLeft = TimeSpan.FromSeconds(2);
-
-                JTD.Instance.Add(ammo);
+                GameManager.Add(ammo);
 
                 // Minor fix for ammo direction, needs more tweaking.
                 Vector enemySpeed = nearestEnemy.Velocity;
@@ -77,8 +62,6 @@ namespace JTD
                 double power = 500;
                 Vector direction = (nearestEnemy.Position - Position).Normalize();
                 ammo.Hit(ammo.Mass * direction * power + dirFix);
-
-                JTD.Instance.AddCollisionHandler(ammo, "Enemy", TargetHit);
             }
         }
         
