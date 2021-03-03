@@ -6,7 +6,7 @@ namespace JTD
     /// <summary>
     /// Target you must protect
     /// </summary>
-    class Target : PhysicsObject
+    public class Target : PhysicsObject
     {
         public IntMeter Health { get; private set; }
 

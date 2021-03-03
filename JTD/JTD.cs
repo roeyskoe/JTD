@@ -12,17 +12,11 @@ namespace JTD
     {
         private Image grass = LoadImage("grass.png");
 
-        private Image enemy1 = LoadImage("enemy1.png"),
-            enemy2 = LoadImage("enemy2.png"),
-            enemy3 = LoadImage("enemy3.png"),
-            enemy4 = LoadImage("enemy4.png");
-
         private Image castle = LoadImage("castle.png");
         private SortedList<char, Vector> route;
         private Dictionary<string,CannonTemplate> cannons;
-        private object[,] enemies;
+        private Dictionary<string, EnemyTemplate> enemies;
         private bool pointsAdded;
-        private Target target;
 
         /// <summary>
         /// Game initialization
@@ -39,16 +33,9 @@ namespace JTD
             GameManager.KillCount = new IntMeter(0);
             GameManager.Images = new Images();
             
-            enemies = new object[,]
-            {
-                {3, 100, 30, enemy1},
-                {5, 40, 40, enemy2},
-                {7, 60, 50, enemy3},
-                {9, 20, 70, enemy4}
-            }; //lifepoints, speed, value, texture
-            
             cannons = JsonSerializer.Deserialize<Dictionary<string,CannonTemplate>>(System.IO.File.ReadAllText("Content/CannonDefinitions.json"));
-            
+            enemies = JsonSerializer.Deserialize<Dictionary<string, EnemyTemplate>>(System.IO.File.ReadAllText("Content/EnemyDefinitions.json"));
+
             SetWindowSize(1000, 600);
 
             Level.Background.Image = grass;
@@ -132,20 +119,12 @@ namespace JTD
         /// </summary> 
         public void CreateEnemy()
         {
-            int i = RandomGen.NextInt(0, 4);
-            Enemy enemy = new Enemy(15, 15, (int) enemies[i, 0] * GameManager.Level, (int) enemies[i, 2], (Image) enemies[i, 3],
-                (int) enemies[i, 1], route);
+            EnemyTemplate nextEnemy = enemies[RandomGen.SelectOne(enemies.Keys.ToArray())];
+            Enemy enemy = new Enemy(nextEnemy, GameManager.Level, route);
             enemy.Position = route.Values[0];
 
             Add(enemy);
-            AddCollisionHandler(enemy, "Target", delegate
-            {
-                Explosion explosion = new Explosion(50);
-                explosion.Position = enemy.Position;
-                //Add(explosion); //TODO: nullpointer crash
-                target.Health.Value -= 100;
-                enemy.Destroy();
-            });
+            
             enemy.Destroyed += delegate { Kill(enemy); };
 
             GameManager.EnemiesAlive++;
@@ -235,12 +214,14 @@ namespace JTD
         /// </summary>
         public void CreateTarget()
         {
-            target = new Target(50, 70, 500, castle);
+            Target target = new Target(50, 70, 500, castle);
             target.Position = route.Values[route.Count - 1]; // + new Vector(15, 10);
 
             Add(target);
 
             target.Destroyed += delegate { End(); };
+
+            GameManager.Target = target;
         }
 
         /// <summary>

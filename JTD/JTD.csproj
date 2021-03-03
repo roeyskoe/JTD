@@ -13,6 +13,9 @@
         <PackageReference Include="Jypeli.FarseerPhysics.NET" Version="1.0.*" />
     </ItemGroup>
     <ItemGroup>
+      <None Update="Content\EnemyDefinitions.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
       <None Update="Content\grass.png">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>

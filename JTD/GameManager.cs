@@ -13,6 +13,7 @@ namespace JTD
         public static int EnemiesAlive { get; set; }
         public static string CannonSelected { get; set; }
         public static Images Images { get; set; }
+        public static Target Target { get; set; }
 
         /// <summary>
         /// Add object to game

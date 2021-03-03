@@ -1,0 +1,26 @@
+{
+  "Basic": {
+    "BaseHealth": 5,
+    "Value": 20,
+    "Speed": 40,
+    "Image": "enemy1"
+  },
+  "Speedy": {
+    "BaseHealth": 3,
+    "Value": 40,
+    "Speed": 100,
+    "Image": "enemy2"
+  },
+  "Normal": {
+    "BaseHealth": 7,
+    "Value": 50,
+    "Speed":60,
+    "Image": "enemy3"
+  },
+  "Tank": {
+    "BaseHealth": 9,
+    "Value": 70,
+    "Speed": 20,
+    "Image": "enemy4"
+  }
+}
