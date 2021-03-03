@@ -12,11 +12,6 @@ namespace JTD
     {
         private Image grass = LoadImage("grass.png");
 
-        private Image cannon1 = LoadImage("cannon1"),
-            cannon2 = LoadImage("cannon2.png"),
-            cannon3 = LoadImage("cannon3.png"),
-            cannon4 = LoadImage("cannon4.png");
-
         private Image enemy1 = LoadImage("enemy1.png"),
             enemy2 = LoadImage("enemy2.png"),
             enemy3 = LoadImage("enemy3.png"),
@@ -36,13 +31,13 @@ namespace JTD
         {
             ClearAll();
 
-            
             IsPaused = false;
 
             GameManager.Level = 1;
             GameManager.EnemiesAlive = 0;
             GameManager.Money = new IntMeter(1000);
             GameManager.KillCount = new IntMeter(0);
+            GameManager.Images = new Images();
             
             enemies = new object[,]
             {
@@ -392,7 +387,7 @@ namespace JTD
                 GameObject button = new GameObject(10, 10, Shape.Rectangle);
                 button.X = Level.Left + i * 10 + 10;
                 button.Y = Level.Top + 20;
-                button.Image = LoadImage(cannons[key].Image);
+                button.Image = GameManager.Images[cannons[key].Image];
                 button.Tag = key;
                 Add(button, 3);
                 i++;

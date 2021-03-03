@@ -33,7 +33,7 @@ namespace JTD
             Price = cannonTemplate.Price;
             Damage = cannonTemplate.Damage;
             Speed = cannonTemplate.Interval;
-            Image = JTD.LoadImage(cannonTemplate.Image); // TODO: ImageDictionary?
+            Image = GameManager.Images[cannonTemplate.Image];
             Tag = "Cannon";
 
             AmmoColor = (Color)typeof(Color).GetField(cannonTemplate.AmmoColor).GetValue(null);
