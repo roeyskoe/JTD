@@ -1,4 +1,5 @@
 using Jypeli;
+using Jypeli.Controls;
 
 namespace JTD
 {
@@ -14,6 +15,8 @@ namespace JTD
         public static string CannonSelected { get; set; }
         public static Images Images { get; set; }
         public static Target Target { get; set; }
+        public static ListenContext ListenContext { get; set; }
+        public static string DebugText { get; set; }
 
         /// <summary>
         /// Add object to game

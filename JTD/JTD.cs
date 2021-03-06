@@ -6,6 +6,7 @@ using Jypeli.Widgets;
 using System.Linq;
 using System.Text.Json;
 using JTD.GUI;
+using Jypeli.Controls;
 
 namespace JTD
 {
@@ -15,6 +16,7 @@ namespace JTD
         private Dictionary<string,CannonTemplate> cannons;
         private Dictionary<string, EnemyTemplate> enemies;
         private bool pointsAdded;
+        Label debugLabel;
 
         /// <summary>
         /// Game initialization
@@ -30,6 +32,8 @@ namespace JTD
             GameManager.Money = new IntMeter(1000);
             GameManager.KillCount = new IntMeter(0);
             GameManager.Images = new Images();
+            GameManager.ListenContext = ControlContext;
+            GameManager.DebugText = "";
             
             cannons = JsonSerializer.Deserialize<Dictionary<string,CannonTemplate>>(System.IO.File.ReadAllText("Content/cannons/CannonDefinitions.json"));
             enemies = JsonSerializer.Deserialize<Dictionary<string, EnemyTemplate>>(System.IO.File.ReadAllText("Content/enemies/EnemyDefinitions.json"));
@@ -54,6 +58,15 @@ namespace JTD
 
             Cannonselector cs = new(cannons.Values.ToList());
             Add(cs);
+
+            debugLabel = new Label();
+            debugLabel.Y = 100;
+            Add(debugLabel);
+        }
+        protected override void Update(Time time)
+        {
+            debugLabel.Text = GameManager.DebugText;
+            base.Update(time);
         }
 
         /// <summary>
@@ -61,10 +74,8 @@ namespace JTD
         /// </summary>
         public void Controllers()
         {
-            IsMouseVisible = true;
-
             Keyboard.Listen(Key.Escape, ButtonState.Pressed, ConfirmExit, "Quit");
-            Mouse.Listen(MouseButton.Left, ButtonState.Pressed, MouseHandler, "Build cannon");
+            Mouse.Listen(MouseButton.Left, ButtonState.Pressed, MouseHandler, "Build cannon").InContext(this);
             Keyboard.Listen(Key.D1, ButtonState.Pressed, SelectCannon, "Select 1st cannon", 1);
             Keyboard.Listen(Key.D2, ButtonState.Pressed, SelectCannon, "Select 2nd cannon", 2);
             Keyboard.Listen(Key.D3, ButtonState.Pressed, SelectCannon, "Select 3rd cannon", 3);
@@ -166,7 +177,6 @@ namespace JTD
             {
                 tiles.SetTileMethod(merkki, CreateCorner, merkki);
             }
-
             tiles.Execute(20, 20);
             CreateTarget();
         }
@@ -291,31 +301,6 @@ namespace JTD
             bool cannon = false;
             bool path = false;
             bool somethingClicked = false;
-
-            // is mouse on a cannon?
-            foreach (Cannon t in cannons)
-            {
-                cannon = Mouse.IsCursorOn(t);
-                if (cannon)
-                {
-                    somethingClicked = true;
-                    t.Upgrade(GameManager.Money);
-                }
-            }
-
-            // cannon selector
-            int position = 0;
-            foreach (GameObject n in buttons)
-            {
-                button = Mouse.IsCursorOn(n);
-                position++;
-
-                if (button)
-                {
-                    somethingClicked = true;
-                    SelectCannon(position);
-                }
-            }
 
             // is mouse on a route
             foreach (GameObject p in route)

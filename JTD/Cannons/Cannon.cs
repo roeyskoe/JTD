@@ -56,6 +56,8 @@ namespace JTD
             }
             
             ShootTimer.Start();
+
+            Game.Instance.Mouse.ListenOn(this, MouseButton.Left, ButtonState.Pressed, Upgrade, null);
         }
 
         /// <summary>
@@ -109,10 +111,10 @@ namespace JTD
         /// Upgrade cannon for more power.
         /// </summary>
         /// <param name="money">Players money</param>
-        public void Upgrade(IntMeter money)
+        public void Upgrade()
         {
             Color[] colors = {Color.Red, Color.Green, Color.Blue, Color.White};
-            if (money.Value >= Price * 2 && Level < 4)
+            if (GameManager.Money.Value >= Price * 2 && Level < 4)
             {
                 Level++;
                 ShootTimer.Interval = ShootTimer.Interval * 0.9;
@@ -126,7 +128,7 @@ namespace JTD
 
                 Image = image;
                 Price = Price * 2;
-                money.Value -= Convert.ToInt32(Price);
+                GameManager.Money.Value -= Convert.ToInt32(Price);
             }
         }
     }

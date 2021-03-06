@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using JTD;
+using Jypeli.Controls;
 
 namespace JTD.GUI
 {
@@ -12,8 +14,13 @@ namespace JTD.GUI
     /// </summary>
     class Cannonselector : Window
     {
+        Widget selected;
+        List<Widget> wcannons = new List<Widget>();
+        
         public Cannonselector(List<CannonTemplate> cannons)
         {
+            var context = new ListenContext();
+            context.Enable();
             Layout = new HorizontalLayout();
             Layout.LeftPadding = 5;
             Layout.RightPadding = 5;
@@ -23,7 +30,7 @@ namespace JTD.GUI
             Color = Color.Transparent;
             BorderColor = Color.Red;
             IsModal = false;
-
+            
             foreach (var cannon in cannons)
             {
                 Widget main = new Widget(40, 40);
@@ -33,7 +40,29 @@ namespace JTD.GUI
                 image.Image = GameManager.Images[cannon.Image];
                 main.Add(image);
                 Add(main);
+
+                wcannons.Add(main);
+
+                Game.Instance.Mouse.ListenOn(main, MouseButton.Left, ButtonState.Pressed, () => Select(main), null).InContext(context);
             }
+            selected = wcannons.First();
+            Game.Instance.Mouse.ListenOn(this, HoverState.On, MouseButton.None, ButtonState.Irrelevant,() => 
+            {
+                GameManager.DebugText = "Päällä";
+                GameManager.ListenContext.Disable();
+            }, null).InContext(context);
+            Game.Instance.Mouse.ListenOn(this, HoverState.Off, MouseButton.None, ButtonState.Irrelevant, () => 
+            {
+                GameManager.DebugText = "Pois";
+                GameManager.ListenContext.Enable();
+            }, null).InContext(context);
+        }
+
+        private void Select(Widget w)
+        {
+            selected.BorderColor = Color.Black;
+            w.BorderColor = Color.Red;
+            selected = w;
         }
     }
 }
