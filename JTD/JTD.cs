@@ -5,6 +5,7 @@ using Jypeli.Assets;
 using Jypeli.Widgets;
 using System.Linq;
 using System.Text.Json;
+using JTD.GUI;
 
 namespace JTD
 {
@@ -50,6 +51,9 @@ namespace JTD
             Wave();
 
             pointsAdded = false;
+
+            Cannonselector cs = new(cannons.Values.ToList());
+            Add(cs);
         }
 
         /// <summary>
