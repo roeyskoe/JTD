@@ -13,7 +13,7 @@
         <PackageReference Include="Jypeli.FarseerPhysics.NET" Version="1.0.*" />
     </ItemGroup>
     <ItemGroup>
-      <None Update="Content\EnemyDefinitions.json">
+      <None Update="Content\Enemies\EnemyDefinitions.json">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
       <None Update="Content\grass.png">
@@ -22,34 +22,34 @@
       <None Update="Content\level.txt">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Content\enemy4.png">
+      <None Update="Content\Enemies\enemy4.png">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Content\enemy3.png">
+      <None Update="Content\Enemies\enemy3.png">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Content\enemy2.png">
+      <None Update="Content\Enemies\enemy2.png">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Content\enemy1.png">
+      <None Update="Content\Enemies\enemy1.png">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Content\cannon4.png">
+      <None Update="Content\cannons\cannon4.png">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Content\cannon3.png">
+      <None Update="Content\cannons\cannon3.png">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Content\cannon2.png">
+      <None Update="Content\cannons\cannon2.png">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Content\cannon1.png">
+      <None Update="Content\cannons\cannon1.png">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
       <None Update="Content\castle.png">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Content\CannonDefinitions.json">
+      <None Update="Content\cannons\CannonDefinitions.json">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
     </ItemGroup>

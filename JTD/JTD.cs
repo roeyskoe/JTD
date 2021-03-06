@@ -10,9 +10,6 @@ namespace JTD
 {
     public class JTD : PhysicsGame
     {
-        private Image grass = LoadImage("grass.png");
-
-        private Image castle = LoadImage("castle.png");
         private SortedList<char, Vector> route;
         private Dictionary<string,CannonTemplate> cannons;
         private Dictionary<string, EnemyTemplate> enemies;
@@ -33,12 +30,11 @@ namespace JTD
             GameManager.KillCount = new IntMeter(0);
             GameManager.Images = new Images();
             
-            cannons = JsonSerializer.Deserialize<Dictionary<string,CannonTemplate>>(System.IO.File.ReadAllText("Content/CannonDefinitions.json"));
-            enemies = JsonSerializer.Deserialize<Dictionary<string, EnemyTemplate>>(System.IO.File.ReadAllText("Content/EnemyDefinitions.json"));
+            cannons = JsonSerializer.Deserialize<Dictionary<string,CannonTemplate>>(System.IO.File.ReadAllText("Content/cannons/CannonDefinitions.json"));
+            enemies = JsonSerializer.Deserialize<Dictionary<string, EnemyTemplate>>(System.IO.File.ReadAllText("Content/enemies/EnemyDefinitions.json"));
 
             SetWindowSize(1000, 600);
-
-            Level.Background.Image = grass;
+            
             CreateLevel();
             Controllers();
             CreateMoneyCounter();
@@ -46,9 +42,12 @@ namespace JTD
             SelectCannon(1);
             KillCounter();
 
-            Wave();
-
             Camera.ZoomToAllObjects();
+            Level.Size = Screen.Size;
+            Level.Background.Image = GameManager.Images["grass.png"];
+            Level.Background.TileToLevel();
+
+            Wave();
 
             pointsAdded = false;
         }
@@ -158,6 +157,7 @@ namespace JTD
             TileMap tiles = TileMap.FromLevelAsset("level.txt");
             tiles.SetTileMethod('#', CreatePath);
             tiles.SetTileMethod('+', CreateNoBuildArea);
+            tiles.SetTileMethod('*', CreateWall);
             for (char merkki = 'A'; merkki <= 'Z'; merkki++)
             {
                 tiles.SetTileMethod(merkki, CreateCorner, merkki);
@@ -165,6 +165,13 @@ namespace JTD
 
             tiles.Execute(20, 20);
             CreateTarget();
+        }
+
+        private void CreateWall(Vector position, double width, double height)
+        {
+            GameObject g = new GameObject(width, height);
+            g.Position = position;
+            Add(g);
         }
 
         /// <summary>
@@ -214,7 +221,7 @@ namespace JTD
         /// </summary>
         public void CreateTarget()
         {
-            Target target = new Target(50, 70, 500, castle);
+            Target target = new Target(50, 70, 500, GameManager.Images["castle.png"]);
             target.Position = route.Values[route.Count - 1]; // + new Vector(15, 10);
 
             Add(target);
