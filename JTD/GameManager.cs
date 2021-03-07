@@ -17,6 +17,7 @@ namespace JTD
         public static Target Target { get; set; }
         public static ListenContext ListenContext { get; set; }
         public static string DebugText { get; set; }
+        public static Grid Grid { get; set; }
 
         /// <summary>
         /// Add object to game

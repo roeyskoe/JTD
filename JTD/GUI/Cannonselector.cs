@@ -17,6 +17,9 @@ namespace JTD.GUI
         Widget selected;
         List<Widget> wcannons = new List<Widget>();
         
+        Color defaultColor = new Color(63, 84, 191, 120);
+        Color selectColor = new Color(167, 234, 36, 120);
+
         public Cannonselector(List<CannonTemplate> cannons)
         {
             var context = new ListenContext();
@@ -27,15 +30,19 @@ namespace JTD.GUI
             Layout.BottomPadding = 5;
             Layout.TopPadding = 5;
 
-            Color = Color.Transparent;
+            Color = new Color(193, 66, 66, 120);
             BorderColor = Color.Red;
             IsModal = false;
+
+            // Need to update Jypeli so that this works and disables window dragging.
+            // IsCapturingMouse = false;
             
             foreach (var cannon in cannons)
             {
                 Widget main = new Widget(40, 40);
-                main.Color = Color.Transparent;
+                main.Color = defaultColor;
                 main.BorderColor = Color.Black;
+                main.Tag = cannon.Name;
                 Widget image = new Widget(30, 30);
                 image.Image = GameManager.Images[cannon.Image];
                 main.Add(image);
@@ -45,15 +52,16 @@ namespace JTD.GUI
 
                 Game.Instance.Mouse.ListenOn(main, MouseButton.Left, ButtonState.Pressed, () => Select(main), null).InContext(context);
             }
+
             selected = wcannons.First();
-            Game.Instance.Mouse.ListenOn(this, HoverState.On, MouseButton.None, ButtonState.Irrelevant,() => 
+            Select(wcannons.First());
+
+            Game.Instance.Mouse.ListenOn(this, HoverState.Enter, MouseButton.None, ButtonState.Irrelevant,() => 
             {
-                GameManager.DebugText = "Päällä";
                 GameManager.ListenContext.Disable();
             }, null).InContext(context);
-            Game.Instance.Mouse.ListenOn(this, HoverState.Off, MouseButton.None, ButtonState.Irrelevant, () => 
+            Game.Instance.Mouse.ListenOn(this, HoverState.Exit, MouseButton.None, ButtonState.Irrelevant, () => 
             {
-                GameManager.DebugText = "Pois";
                 GameManager.ListenContext.Enable();
             }, null).InContext(context);
         }
@@ -61,8 +69,11 @@ namespace JTD.GUI
         private void Select(Widget w)
         {
             selected.BorderColor = Color.Black;
+            selected.Color = defaultColor;
             w.BorderColor = Color.Red;
             selected = w;
+            selected.Color = selectColor;
+            GameManager.CannonSelected = w.Tag.ToString();
         }
     }
 }

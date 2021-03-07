@@ -11,5 +11,6 @@ namespace JTD
         public string Image { get; set; }
         public double BurstDelay { get; set; }
         public int BurstCount { get; set; }
+        public string Name { get; set; }
     }
 }

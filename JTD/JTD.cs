@@ -17,6 +17,7 @@ namespace JTD
         private Dictionary<string, EnemyTemplate> enemies;
         private bool pointsAdded;
         Label debugLabel;
+        Widget mousevisualizer;
 
         /// <summary>
         /// Game initialization
@@ -34,17 +35,26 @@ namespace JTD
             GameManager.Images = new Images();
             GameManager.ListenContext = ControlContext;
             GameManager.DebugText = "";
+            GameManager.Grid = new Grid();
+            GameManager.Grid.CellSize = new Vector(20, 20);
             
             cannons = JsonSerializer.Deserialize<Dictionary<string,CannonTemplate>>(System.IO.File.ReadAllText("Content/cannons/CannonDefinitions.json"));
             enemies = JsonSerializer.Deserialize<Dictionary<string, EnemyTemplate>>(System.IO.File.ReadAllText("Content/enemies/EnemyDefinitions.json"));
+
+            foreach (var item in cannons.Keys)
+            {
+                CannonTemplate c = cannons[item];
+                c.Name = item;
+                cannons[item] = c; // TODO: Simpler way without modifying json?
+            }
+
+            GameManager.CannonSelected = cannons.First().Value.Name;
 
             SetWindowSize(1000, 600);
             
             CreateLevel();
             Controllers();
             CreateMoneyCounter();
-            ShowCannons();
-            SelectCannon(1);
             KillCounter();
 
             Camera.ZoomToAllObjects();
@@ -57,7 +67,14 @@ namespace JTD
             pointsAdded = false;
 
             Cannonselector cs = new(cannons.Values.ToList());
+            cs.X = Screen.Left + cs.Width/1.5;
+            cs.Y = Screen.Bottom + cs.Height;
             Add(cs);
+
+            mousevisualizer = new Widget(20, 20);
+            mousevisualizer.Color = Color.Transparent;
+            mousevisualizer.BorderColor = Color.LightGray;
+            Add(mousevisualizer);
 
             debugLabel = new Label();
             debugLabel.Y = 100;
@@ -66,6 +83,7 @@ namespace JTD
         protected override void Update(Time time)
         {
             debugLabel.Text = GameManager.DebugText;
+            mousevisualizer.Position = GameManager.Grid.SnapToLines(Mouse.PositionOnScreen);
             base.Update(time);
         }
 
@@ -76,10 +94,12 @@ namespace JTD
         {
             Keyboard.Listen(Key.Escape, ButtonState.Pressed, ConfirmExit, "Quit");
             Mouse.Listen(MouseButton.Left, ButtonState.Pressed, MouseHandler, "Build cannon").InContext(this);
+            /*
             Keyboard.Listen(Key.D1, ButtonState.Pressed, SelectCannon, "Select 1st cannon", 1);
             Keyboard.Listen(Key.D2, ButtonState.Pressed, SelectCannon, "Select 2nd cannon", 2);
             Keyboard.Listen(Key.D3, ButtonState.Pressed, SelectCannon, "Select 3rd cannon", 3);
             Keyboard.Listen(Key.D4, ButtonState.Pressed, SelectCannon, "Select 4th cannon", 4);
+            */
 #if DEBUG
             Keyboard.Listen(Key.Enter, ButtonState.Pressed, delegate { GameManager.Money.Value += 10000; }, "Debugmoney", 4);
 #endif
@@ -328,7 +348,7 @@ namespace JTD
             if (GameManager.Money.Value >= selected.Price)
             {
                 Cannon cannon = new Cannon(selected);
-                cannon.Position = Mouse.PositionOnWorld;
+                cannon.Position = GameManager.Grid.SnapToLines(Mouse.PositionOnWorld);
 
                 Add(cannon, +1);
                 GameManager.Money.Value -= cannon.Price;
@@ -339,48 +359,6 @@ namespace JTD
                 cannon.TurnTimer.Timeout += delegate { cannon.Aim(); };
                 cannon.TurnTimer.Start();
             }
-        }
-
-        private GameObject cannonSelection;
-
-        public void SelectCannon(int cannon)
-        {
-            int n = cannon - 1;
-            GameManager.CannonSelected = cannons.Keys.ToArray()[n];
-            cannonSelection.X = Level.Left + n * 10 + 10;
-            cannonSelection.Y = Level.Top + 20;
-        }
-
-        /// <summary>
-        /// Show buildable cannons on the top left corner
-        /// </summary>
-        public void ShowCannons()
-        {
-            cannonSelection = ShowSelection();
-            var keys = cannons.Keys;
-            int i = 0;
-            foreach (var key in keys)
-            {
-                GameObject button = new GameObject(10, 10, Shape.Rectangle);
-                button.X = Level.Left + i * 10 + 10;
-                button.Y = Level.Top + 20;
-                button.Image = GameManager.Images[cannons[key].Image];
-                button.Tag = key;
-                Add(button, 3);
-                i++;
-            }
-            
-        }
-
-        /// <summary>
-        /// Shows selected cannon with a yellow square
-        /// </summary>
-        public GameObject ShowSelection()
-        {
-            GameObject selection = new GameObject(10, 10, Shape.Rectangle);
-            selection.Color = Color.Yellow;
-            Add(selection, 2);
-            return selection;
         }
 
         /// <summary>
