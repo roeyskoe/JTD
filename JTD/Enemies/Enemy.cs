@@ -21,7 +21,7 @@ namespace JTD
             Health.LowerLimit += Destroy;
 
             Image = GameManager.Images[enemyTemplate.Image];
-
+            Value = enemyTemplate.Value;
             Tag = "Enemy";
             CanRotate = false;
             IgnoresCollisionResponse = true;
@@ -34,6 +34,7 @@ namespace JTD
             HealthBar.BarColor = Color.DarkGreen;
             HealthBar.Color = Color.BloodRed;
             HealthBar.Bottom = Bottom - 5;
+
             Add(HealthBar);
 
             AddCollisionHandler<Ammo>("Ammo", AmmoHit);

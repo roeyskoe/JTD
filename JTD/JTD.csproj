@@ -1,16 +1,16 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
-        <TargetFrameworks>net5.0</TargetFrameworks>
+        <TargetFrameworks>net6.0</TargetFrameworks>
         <PublishReadyToRun>false</PublishReadyToRun>
         <TieredCompilation>false</TieredCompilation>
         <ReleaseVersion>0.0.1</ReleaseVersion>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Jypeli.NET" Version="10.*" />
-        <PackageReference Include="Jypeli.FarseerPhysics.NET" Version="1.0.*" />
+		<PackageReference Include="Jypeli.NET" Version="11.1.0" />
+        <PackageReference Include="Jypeli.FarseerPhysics.NET" Version="2.0.1" />
     </ItemGroup>
     <ItemGroup>
       <None Update="Content\Enemies\EnemyDefinitions.json">

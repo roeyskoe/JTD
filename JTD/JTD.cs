@@ -50,7 +50,7 @@ namespace JTD
 
             GameManager.CannonSelected = cannons.First().Value.Name;
 
-            SetWindowSize(1000, 600);
+            SetWindowSize(2000, 1200);
             
             CreateLevel();
             Controllers();
@@ -66,7 +66,7 @@ namespace JTD
 
             pointsAdded = false;
 
-            Cannonselector cs = new(cannons.Values.ToList());
+            Cannonselector cs = new Cannonselector(cannons.Values.ToList());
             cs.X = Screen.Left + cs.Width/1.5;
             cs.Y = Screen.Bottom + cs.Height;
             Add(cs);
@@ -127,8 +127,8 @@ namespace JTD
         public void KillCounter()
         {
             Label killcounter = new Label();
-            killcounter.X = Level.Right + 30;
-            killcounter.Y = Level.Top + 70;
+            killcounter.X = Screen.Right - 40;
+            killcounter.Y = Screen.Top - 20;
             killcounter.TextColor = Color.Black;
             killcounter.Color = Color.White;
             killcounter.IntFormatString = "Kills: {0}";

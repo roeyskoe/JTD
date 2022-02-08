@@ -93,7 +93,7 @@ namespace JTD
 
                 double power = 500;
                 Vector direction = (nearestEnemy.Position - Position).Normalize();
-                ammo.Hit(ammo.Mass * direction * power + dirFix);
+                ammo.Hit(ammo.Mass * (direction * power + dirFix));
             }
         }
         
